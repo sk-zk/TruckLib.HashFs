@@ -43,7 +43,7 @@ namespace TruckLib.HashFs
                 if (str.StartsWith('/'))
                 {
                     if (filesOnly) continue;
-                    var subPath = str[1..] + "/";
+                    var subPath = str[1..];
                     subdirs.Add(subPath);
                 }
                 // is file

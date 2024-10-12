@@ -39,7 +39,7 @@ namespace TruckLib.HashFs
                     if (dirEntries[i].StartsWith(dirMarker))
                     {
                         if (filesOnly) continue;
-                        var subPath = dirEntries[i][1..] + "/";
+                        var subPath = dirEntries[i][1..];
                         subdirs.Add(subPath);
                     }
                     // is file
