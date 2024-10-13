@@ -28,10 +28,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Data\Dds\sample.dds">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\not_a_hashfs_file.scs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Data\simple_v2.scs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\tobj_v2.scs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Data\unsupported_hash_v2.scs">

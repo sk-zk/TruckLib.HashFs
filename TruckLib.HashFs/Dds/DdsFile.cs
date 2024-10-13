@@ -1,5 +1,7 @@
 ﻿using System.IO;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("TruckLib.HashFs.Tests")]
 namespace TruckLib.HashFs.Dds
 {
     /// <summary>
@@ -27,6 +29,17 @@ namespace TruckLib.HashFs.Dds
         /// The surface data of the DDS file.
         /// </summary>
         public byte[] Data { get; set; }
+
+        public static DdsFile Open(string path)
+        {
+            var dds = new DdsFile();
+
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
+            using var r = new BinaryReader(fs);
+            dds.Deserialize(r);
+
+            return dds;
+        }
 
         public void Deserialize(BinaryReader r)
         {

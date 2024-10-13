@@ -1,5 +1,7 @@
 ﻿using System.IO;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("TruckLib.HashFs.Tests")]
 namespace TruckLib.HashFs.Dds
 {
     /// <summary>
