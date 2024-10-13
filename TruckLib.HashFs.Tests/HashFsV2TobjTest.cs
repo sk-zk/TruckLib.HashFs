@@ -42,8 +42,6 @@ namespace TruckLib.HashFs.Tests
             Assert.Equal(TobjAddr.Repeat, tobj.AddrW);
             Assert.Equal(["/sample.dds"], tobj.TexturePaths);
 
-            File.WriteAllBytes("c:/users/daniel/desktop/sample_mine.dds", ddsBytes);
-
             // TODO test DDS
         }
 
