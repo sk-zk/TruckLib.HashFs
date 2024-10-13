@@ -33,7 +33,7 @@ namespace TruckLib.HashFs.Dds
             var magic = r.ReadInt32();
             if (magic != Magic) 
             {
-                throw new InvalidDataException("Not a DDS filo");
+                throw new InvalidDataException("Not a DDS file");
             }
 
             Header = new DdsHeader();
