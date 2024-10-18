@@ -5,8 +5,6 @@ VisualStudioVersion = 17.8.34322.80
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TruckLib.HashFs", "TruckLib.HashFs\TruckLib.HashFs.csproj", "{ECF6E7B4-929D-4C64-9ED1-0B158F2E551F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TruckLib.Models", "..\TruckLib.Models\TruckLib.Models\TruckLib.Models.csproj", "{E62ECA83-CCD3-49C9-947D-414BE86B32A2}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TruckLib.HashFs.Tests", "TruckLib.HashFs.Tests\TruckLib.HashFs.Tests.csproj", "{01709278-FE27-485C-84A7-B0EE722C6B1C}"
 EndProject
 Global

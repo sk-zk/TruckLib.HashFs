@@ -17,10 +17,7 @@
 	<ItemGroup>
 	  <PackageReference Include="GisDeflate" Version="1.0.1" />
 	  <PackageReference Include="Iconic.Zlib.Netstandard" Version="1.0.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <ProjectReference Include="..\..\TruckLib.Models\TruckLib.Models\TruckLib.Models.csproj" />
+    <PackageReference Include="TruckLib.Models" Version="0.1.0" />
 	</ItemGroup>
 
 </Project>
