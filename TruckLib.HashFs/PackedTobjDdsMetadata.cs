@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using TruckLib.HashFs.Dds;
 using TruckLib.Models;
 
 namespace TruckLib.HashFs
@@ -16,7 +17,7 @@ namespace TruckLib.HashFs
         internal FlagField SampleFlags;
 
         public uint MipmapCount => ImgFlags.GetBitString(0, 4) + 1;
-        public uint Format => ImgFlags.GetBitString(4, 8);
+        public DxgiFormat Format => (DxgiFormat)ImgFlags.GetBitString(4, 8);
         public bool IsCube => ImgFlags.GetBitString(12, 2) != 0;
         public uint FaceCount => ImgFlags.GetBitString(14, 6) + 1;
         public int PitchAlignment => 1 << (int)ImgFlags.GetBitString(20, 4);
