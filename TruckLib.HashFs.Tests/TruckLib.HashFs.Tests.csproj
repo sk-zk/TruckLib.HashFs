@@ -28,6 +28,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Data\bigtexture_v2.scs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\Dds\sample.dds">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
