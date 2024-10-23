@@ -333,10 +333,11 @@ namespace TruckLib.HashFs
                     meta.ImgFlags = new FlagField(r.ReadUInt32());
                     meta.SampleFlags = new FlagField(r.ReadUInt32());
                     var compressedSizeBytes = r.ReadBytes(3);
+                    var compressedSizeMsbAndCompressedFlag = r.ReadByte();
                     var compressedSize = compressedSizeBytes[0]
-                        + (compressedSizeBytes[1] << 8)
-                        + (compressedSizeBytes[2] << 16);
-                    var flags = r.ReadByte();
+                        + (compressedSizeBytes[1] << 8) 
+                        + (compressedSizeBytes[2] << 16) 
+                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
                     var unknown3 = r.ReadBytes(8);
                     var offsetBlock = r.ReadUInt32();
 
@@ -345,7 +346,7 @@ namespace TruckLib.HashFs
                         Index = (uint)index,
                         Offset = offsetBlock * blockSize,
                         CompressedSize = (uint)compressedSize,
-                        IsCompressed = (flags & 0xF0) != 0,
+                        IsCompressed = (compressedSizeMsbAndCompressedFlag & 0xF0) != 0,
                         Metadata = meta
                     };
                     metaEntries.Add((uint)index, metaEntry);
