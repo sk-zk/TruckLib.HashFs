@@ -25,8 +25,12 @@ namespace TruckLib.HashFs
 
         internal BinaryReader Reader { get; set; }
 
-        protected const string RootPath = "/";
+        protected const char Separator = '/';
+        protected const string Root = "/";
         protected const string SupportedHashMethod = "CITY";
+
+        /// <inheritdoc/>
+        char IFileSystem.DirectorySeparator => Separator;
 
         /// <inheritdoc/>
         public EntryType EntryExists(string path)
@@ -86,7 +90,7 @@ namespace TruckLib.HashFs
                 return;
             }
 
-            System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(outputPath));
+            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(outputPath));
             Reader.BaseStream.Position = (long)entry.Offset;
             using var fileStream = new FileStream(outputPath, FileMode.Create);
             if (entry.IsCompressed)
@@ -149,7 +153,7 @@ namespace TruckLib.HashFs
         /// <inheritdoc/>
         public ulong HashPath(string path, uint? salt = null)
         {
-            if (path != "" && path.StartsWith('/'))
+            if (path != "" && path.StartsWith(Separator))
                 path = path[1..];
 
             // TODO do salts work the same way in v2?
@@ -175,17 +179,19 @@ namespace TruckLib.HashFs
         {
             for (int i = 0; i < paths.Count; i++)
             {
-                if (parent == RootPath)
-                    paths[i] = RootPath + paths[i];
+                if (parent == Root)
+                    paths[i] = Root + paths[i];
                 else
-                    paths[i] = $"{parent}/{paths[i]}";
+                    paths[i] = $"{parent}{Separator}{paths[i]}";
             }
         }
 
         protected string RemoveTrailingSlash(string path)
         {
-            if (path.EndsWith('/') && path != RootPath)
+            if (path.EndsWith(Separator) && path != Root)
+            {
                 path = path[0..^1];
+            }
             return path;
         }
 
@@ -210,6 +216,56 @@ namespace TruckLib.HashFs
                 file = Reader.ReadBytes((int)entry.Size);
             }
             return file;
+        }
+
+        /// <inheritdoc/>
+        bool IFileSystem.FileExists(string path)
+        {
+            return EntryExists(path) == EntryType.File;
+        }
+
+        /// <inheritdoc/>
+        IList<string> IFileSystem.GetFiles(string path)
+        {
+            var dirlist = GetDirectoryListing(path, true, true);
+            return dirlist.Files;
+        }
+
+        /// <inheritdoc/>
+        byte[] IFileSystem.ReadAllBytes(string path)
+        {
+            return Extract(path)[0];
+        }
+
+        /// <inheritdoc/>
+        string IFileSystem.ReadAllText(string path)
+        {
+            var bytes = Extract(path)[0];
+            return Encoding.UTF8.GetString(bytes);
+        }
+
+        /// <inheritdoc/>
+        string IFileSystem.ReadAllText(string path, Encoding encoding)
+        {
+            var bytes = Extract(path)[0];
+            return encoding.GetString(bytes);
+        }
+
+        /// <inheritdoc/>
+        Stream IFileSystem.Open(string path)
+        {
+            var bytes = Extract(path)[0];
+            return new MemoryStream(bytes);
+        }
+
+        /// <inheritdoc/>
+        string IFileSystem.GetParent(string path)
+        {
+            if (path == Root)
+            {
+                return null;
+            }
+            return path[0..path.LastIndexOf(Separator)];
         }
     }
 }

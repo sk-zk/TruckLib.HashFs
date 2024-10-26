@@ -6,7 +6,7 @@ namespace TruckLib.HashFs
     /// <summary>
     /// A HashFS reader for extracting files from HashFS archives.
     /// </summary>
-    public interface IHashFsReader : IDisposable
+    public interface IHashFsReader : IDisposable, IFileSystem
     {
         /// <summary>
         /// Gets the file path of the HashFS archive which this reader is reading from.
