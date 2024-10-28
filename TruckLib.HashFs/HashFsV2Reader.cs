@@ -1,9 +1,9 @@
-﻿using Ionic.Zlib;
-using GisDeflate;
+﻿using GisDeflate;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -105,15 +105,8 @@ namespace TruckLib.HashFs
             }
             else if (entry.IsCompressed)
             {
-                var zlibStream = new ZlibStream(Reader.BaseStream, CompressionMode.Decompress);
-                try
-                {
-                    zlibStream.CopyTo(fileStream, (int)entry.CompressedSize);
-                }
-                catch (ZlibException)
-                {
-                    throw;
-                }
+                using var zlibStream = new ZLibStream(fileStream, CompressionMode.Decompress);
+                zlibStream.CopyTo(fileStream, (int)entry.CompressedSize);
             }
             else
             {
@@ -262,8 +255,7 @@ namespace TruckLib.HashFs
         {
             Reader.BaseStream.Position = (long)metadataTableStart;
 
-            var metadataTableBuffer = 
-                ZlibStream.UncompressBuffer(Reader.ReadBytes((int)metadataTableLength));
+            var metadataTableBuffer = DecompressZLib(Reader.ReadBytes((int)metadataTableLength));
             using var metadataTableStream = new MemoryStream(metadataTableBuffer);
             using var r = new BinaryReader(metadataTableStream);
             var metaEntries = new Dictionary<uint, IMetadataTableEntry>();
@@ -363,7 +355,7 @@ namespace TruckLib.HashFs
         private Span<EntryTableEntry> ReadEntryTable()
         {
             Reader.BaseStream.Position = (long)entryTableStart;
-            var entryTableBuffer = ZlibStream.UncompressBuffer(Reader.ReadBytes((int)entryTableLength));
+            var entryTableBuffer = DecompressZLib(Reader.ReadBytes((int)entryTableLength));
             var entryTable = MemoryMarshal.Cast<byte, EntryTableEntry>(entryTableBuffer.AsSpan());
             entryTable.Sort((x, y) => (int)(x.MetadataIndex - y.MetadataIndex));
             return entryTable;

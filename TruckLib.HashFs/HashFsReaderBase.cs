@@ -1,7 +1,7 @@
-﻿using Ionic.Zlib;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection.PortableExecutable;
 using System.Text;
@@ -95,15 +95,8 @@ namespace TruckLib.HashFs
             using var fileStream = new FileStream(outputPath, FileMode.Create);
             if (entry.IsCompressed)
             {
-                var zlibStream = new ZlibStream(Reader.BaseStream, CompressionMode.Decompress);
-                try
-                {
-                    zlibStream.CopyTo(fileStream, (int)entry.CompressedSize);
-                }
-                catch (ZlibException)
-                {
-                    throw;
-                }
+                using var zlibStream = new ZLibStream(fileStream, CompressionMode.Decompress);
+                zlibStream.CopyTo(fileStream, (int)entry.CompressedSize);
             }
             else
             {
@@ -208,7 +201,7 @@ namespace TruckLib.HashFs
                 else
                 {
                     file = Reader.ReadBytes((int)entry.CompressedSize);
-                    file = ZlibStream.UncompressBuffer(file);
+                    file = DecompressZLib(file);
                 }
             }
             else
@@ -216,6 +209,21 @@ namespace TruckLib.HashFs
                 file = Reader.ReadBytes((int)entry.Size);
             }
             return file;
+        }
+
+        protected byte[] DecompressZLib(Stream input)
+        {
+            using var zlibStream = new ZLibStream(input, CompressionMode.Decompress);
+            using var output = new MemoryStream();
+            zlibStream.CopyTo(output);
+            var decompressed = output.ToArray();
+            return decompressed;
+        }
+
+        protected byte[] DecompressZLib(byte[] buffer)
+        {
+            using var ms = new MemoryStream(buffer);
+            return DecompressZLib(ms);
         }
 
         /// <inheritdoc/>
