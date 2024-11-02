@@ -95,6 +95,7 @@ namespace TruckLib.HashFs
 
             Reader.BaseStream.Position = (long)entry.Offset;
             using var fileStream = new FileStream(outputPath, FileMode.Create);
+            using var ms = new MemoryStream(Reader.ReadBytes((int)entry.CompressedSize));
             if (entry is EntryV2 v2 && v2.TobjMetadata != null)
             {
                 RecreateTobj(v2, entryPath, fileStream);
@@ -105,7 +106,7 @@ namespace TruckLib.HashFs
             }
             else if (entry.IsCompressed)
             {
-                using var zlibStream = new ZLibStream(fileStream, CompressionMode.Decompress);
+                using var zlibStream = new ZLibStream(ms, CompressionMode.Decompress);
                 zlibStream.CopyTo(fileStream, (int)entry.CompressedSize);
             }
             else
