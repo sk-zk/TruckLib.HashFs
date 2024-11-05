@@ -92,10 +92,10 @@ namespace TruckLib.HashFs
 
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(outputPath));
             Reader.BaseStream.Position = (long)entry.Offset;
-            using var ms = new MemoryStream(Reader.ReadBytes((int)entry.CompressedSize));
             using var fileStream = new FileStream(outputPath, FileMode.Create);
             if (entry.IsCompressed)
             {
+                using var ms = new MemoryStream(Reader.ReadBytes((int)entry.CompressedSize));
                 using var zlibStream = new ZLibStream(ms, CompressionMode.Decompress);
                 zlibStream.CopyTo(fileStream, (int)entry.CompressedSize);
             }
