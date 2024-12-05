@@ -108,7 +108,7 @@ namespace TruckLib.HashFs
             {
                 using var ms = new MemoryStream(Reader.ReadBytes((int)entry.CompressedSize));
                 using var zlibStream = new ZLibStream(ms, CompressionMode.Decompress);
-                zlibStream.CopyTo(fileStream, (int)entry.CompressedSize);
+                zlibStream.CopyTo(fileStream);
             }
             else
             {
@@ -275,10 +275,11 @@ namespace TruckLib.HashFs
                 {
                     // a regular file.
                     var compressedSizeBytes = r.ReadBytes(3);
+                    var compressedSizeMsbAndCompressedFlag = r.ReadByte();
                     var compressedSize = compressedSizeBytes[0]
                         + (compressedSizeBytes[1] << 8)
-                        + (compressedSizeBytes[2] << 16);
-                    var flags = r.ReadByte();
+                        + (compressedSizeBytes[2] << 16)
+                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
                     var size = r.ReadUInt32();
                     var unknown2 = r.ReadUInt32();
                     var offsetBlock = r.ReadUInt32();
@@ -289,7 +290,7 @@ namespace TruckLib.HashFs
                         Offset = offsetBlock * blockSize,
                         CompressedSize = (uint)compressedSize,
                         Size = size,
-                        Flags = flags
+                        Flags = (byte)(compressedSizeMsbAndCompressedFlag & 0xF0)
                     };
                     metaEntries.Add((uint)index, metaEntry);
                 }
@@ -297,10 +298,11 @@ namespace TruckLib.HashFs
                 {
                     // a directory listing.
                     var compressedSizeBytes = r.ReadBytes(3);
+                    var compressedSizeMsbAndCompressedFlag = r.ReadByte();
                     var compressedSize = compressedSizeBytes[0]
                         + (compressedSizeBytes[1] << 8)
-                        + (compressedSizeBytes[2] << 16);
-                    var flags = r.ReadByte();
+                        + (compressedSizeBytes[2] << 16)
+                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
                     var size = r.ReadUInt32();
                     var unknown2 = r.ReadUInt32();
                     var offsetBlock = r.ReadUInt32();
@@ -311,7 +313,7 @@ namespace TruckLib.HashFs
                         Offset = offsetBlock * blockSize,
                         CompressedSize = (uint)compressedSize,
                         Size = size,
-                        Flags = flags
+                        Flags = (byte)(compressedSizeMsbAndCompressedFlag & 0xF0)
                     };
                     metaEntries.Add((uint)index, metaEntry);
                 }

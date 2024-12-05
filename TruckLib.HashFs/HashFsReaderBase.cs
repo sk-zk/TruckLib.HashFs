@@ -97,7 +97,7 @@ namespace TruckLib.HashFs
             {
                 using var ms = new MemoryStream(Reader.ReadBytes((int)entry.CompressedSize));
                 using var zlibStream = new ZLibStream(ms, CompressionMode.Decompress);
-                zlibStream.CopyTo(fileStream, (int)entry.CompressedSize);
+                zlibStream.CopyTo(fileStream);
             }
             else
             {
