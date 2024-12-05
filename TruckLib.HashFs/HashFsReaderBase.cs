@@ -95,15 +95,23 @@ namespace TruckLib.HashFs
             using var fileStream = new FileStream(outputPath, FileMode.Create);
             if (entry.IsCompressed)
             {
-                using var ms = new MemoryStream(Reader.ReadBytes((int)entry.CompressedSize));
-                using var zlibStream = new ZLibStream(ms, CompressionMode.Decompress);
-                zlibStream.CopyTo(fileStream);
+                using var zlibStream = new ZLibStream(Reader.BaseStream, CompressionMode.Decompress, true);
+                CopyStream(zlibStream, fileStream, entry.Size);
             }
             else
             {
-                var buffer = new byte[(int)entry.Size];
-                Reader.BaseStream.Read(buffer, 0, (int)entry.Size);
-                fileStream.Write(buffer, 0, (int)entry.Size);
+                CopyStream(Reader.BaseStream, fileStream, entry.Size);
+            }
+        }
+
+        protected static void CopyStream(Stream input, Stream output, long bytes)
+        {
+            var buffer = new byte[32768];
+            int read;
+            while (bytes > 0 && (read = input.Read(buffer, 0, Math.Min(buffer.Length, (int)bytes))) > 0)
+            {
+                output.Write(buffer, 0, read);
+                bytes -= read;
             }
         }
 
