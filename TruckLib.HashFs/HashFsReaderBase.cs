@@ -147,6 +147,7 @@ namespace TruckLib.HashFs
         /// <inheritdoc/>
         public IEntry GetEntry(string path)
         {
+            path = RemoveTrailingSlash(path);
             ulong hash = HashPath(path);
             var entry = Entries[hash];
             return entry;
