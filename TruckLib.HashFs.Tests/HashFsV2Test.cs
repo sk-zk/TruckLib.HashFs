@@ -39,6 +39,19 @@ namespace TruckLib.HashFs.Tests
         }
 
         [Fact]
+        public void TryGetEntry()
+        {
+            Assert.Equal(EntryType.Directory, reader.TryGetEntry("/", out var entry));
+            Assert.True(entry.IsDirectory);
+
+            Assert.Equal(EntryType.File, reader.TryGetEntry("/somedir/long.txt", out var entry2));
+            Assert.Equal(3228U, entry2.Size);
+
+            Assert.Equal(EntryType.NotFound, reader.TryGetEntry("/727", out var entry3));
+            Assert.Null(entry3);
+        }
+
+        [Fact]
         public void GetDirectoryListing()
         {
             var listing = reader.GetDirectoryListing("/");

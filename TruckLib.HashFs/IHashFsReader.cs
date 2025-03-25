@@ -104,6 +104,14 @@ namespace TruckLib.HashFs
         IEntry GetEntry(string path);
 
         /// <summary>
+        /// Retrieves the entry metadata for the given path if it exists.
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <param name="entry">The entry.</param>
+        /// <returns>The entry type.</returns>
+        EntryType TryGetEntry(string path, out IEntry entry);
+
+        /// <summary>
         /// Hashes a file path.
         /// </summary>
         /// <param name="path">The path.</param>

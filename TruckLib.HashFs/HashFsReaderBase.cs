@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
-using System.Reflection.PortableExecutable;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TruckLib.HashFs
@@ -35,9 +35,15 @@ namespace TruckLib.HashFs
         /// <inheritdoc/>
         public EntryType EntryExists(string path)
         {
+            return TryGetEntry(path, out var _);
+        }
+
+        /// <inheritdoc/>
+        public EntryType TryGetEntry(string path, out IEntry entry)
+        {
             path = RemoveTrailingSlash(path);
             var hash = HashPath(path);
-            if (Entries.TryGetValue(hash, out var entry))
+            if (Entries.TryGetValue(hash, out entry))
             {
                 return entry.IsDirectory
                     ? EntryType.Directory
