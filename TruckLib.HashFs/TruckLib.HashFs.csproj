@@ -19,8 +19,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="GisDeflate" Version="1.0.1" />
-	  <PackageReference Include="TruckLib.Models" Version="0.2.0" />
+	  <PackageReference Include="GisDeflate" Version="1.0.2" />
+	  <PackageReference Include="TruckLib.Models" Version="0.2.1" />
 	</ItemGroup>
 
 	<ItemGroup>
