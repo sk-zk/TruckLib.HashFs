@@ -48,7 +48,7 @@ namespace TruckLib.HashFs
                         Reader = reader
                     };
                     h2.ParseHeader();
-                    h2.ParseTables();
+                    h2.ParseEntries();
                     return h2;
                 default:
                     throw new NotSupportedException($"HashFS version {version} is not supported");

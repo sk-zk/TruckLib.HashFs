@@ -114,7 +114,7 @@ namespace TruckLib.HashFs
             }
         }
 
-        private void RecreateTobj(EntryV2 entry, string tobjPath, Stream stream)
+        private static void RecreateTobj(EntryV2 entry, string tobjPath, Stream stream)
         {
             using var w = new BinaryWriter(stream);
             var tobj = entry.TobjMetadata.Value.AsTobj(tobjPath);
@@ -143,7 +143,7 @@ namespace TruckLib.HashFs
             };
             dds.HeaderDxt10 = new DdsHeaderDxt10()
             {
-                Format = (DxgiFormat)entry.TobjMetadata.Value.Format,
+                Format = entry.TobjMetadata.Value.Format,
                 ArraySize = 1,
                 ResourceDimension = D3d10ResourceDimension.Texture2d,
             };
@@ -197,166 +197,126 @@ namespace TruckLib.HashFs
             Platform = (Platform)Reader.ReadByte();
         }
 
-        internal void ParseTables()
+        internal void ParseEntries()
         {
+            const ulong blockSize = 16UL;
+
             var entryTable = ReadEntryTable();
-            var metaEntries = ReadMetadataTable();
+
+            Reader.BaseStream.Position = (long)metadataTableStart;
+            var metadataTableBuffer = DecompressZLib(Reader.ReadBytes((int)metadataTableLength));
+            using var metadataTableStream = new MemoryStream(metadataTableBuffer);
+            using var mr = new BinaryReader(metadataTableStream);
 
             foreach (var entry in entryTable)
             {
-                var meta = metaEntries[entry.MetadataIndex + entry.MetadataCount];
-                if (meta is PlainEntry plain)
+                mr.BaseStream.Position = entry.MetadataIndex * 4;
+
+                var indexBytes = mr.ReadBytes(3);
+                var index = indexBytes[0] + (indexBytes[1] << 8) + (indexBytes[2] << 16);
+
+                var chunkType = (MetadataChunkType)mr.ReadByte();
+                if (chunkType == MetadataChunkType.Plain)
                 {
+                    if (entry.MetadataCount == 2)
+                    {
+                        // Skip 4 bytes ahead to go to directly
+                        // to the payload of chunk type 6.
+                        // Don't know what the deal with that is
+                        mr.ReadUInt32();
+                    }
+
+                    var compressedSizeBytes = mr.ReadBytes(3);
+                    var compressedSizeMsbAndCompressedFlag = mr.ReadByte();
+                    var compressedSize = compressedSizeBytes[0]
+                        + (compressedSizeBytes[1] << 8)
+                        + (compressedSizeBytes[2] << 16)
+                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
+                    var flags = (byte)(compressedSizeMsbAndCompressedFlag & 0xF0);
+                    var size = mr.ReadUInt32();
+                    var unknown2 = mr.ReadUInt32();
+                    var offsetBlock = mr.ReadUInt32();
+
                     Entries.Add(entry.Hash, new EntryV2()
                     {
                         Hash = entry.Hash,
-                        Offset = plain.Offset,
-                        CompressedSize = plain.CompressedSize,
-                        Size = plain.Size,
-                        IsCompressed = (plain.Flags & 0x10) != 0,
+                        Offset = offsetBlock * blockSize,
+                        CompressedSize = (uint)compressedSize,
+                        Size = size,
+                        IsCompressed = (flags & 0x10) != 0,
                         IsDirectory = false,
                     });
                 }
-                else if (meta is DirectoryEntry dir)
+                else if (chunkType == MetadataChunkType.Directory)
                 {
+                    var compressedSizeBytes = mr.ReadBytes(3);
+                    var compressedSizeMsbAndCompressedFlag = mr.ReadByte();
+                    var compressedSize = compressedSizeBytes[0]
+                        + (compressedSizeBytes[1] << 8)
+                        + (compressedSizeBytes[2] << 16)
+                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
+                    var flags = (byte)(compressedSizeMsbAndCompressedFlag & 0xF0);
+                    var size = mr.ReadUInt32();
+                    var unknown2 = mr.ReadUInt32();
+                    var offsetBlock = mr.ReadUInt32();
+
                     Entries.Add(entry.Hash, new EntryV2()
                     {
                         Hash = entry.Hash,
-                        Offset = dir.Offset,
-                        CompressedSize = dir.CompressedSize,
-                        Size = dir.Size,
-                        IsCompressed = (dir.Flags & 0x10) != 0,
+                        Offset = offsetBlock * blockSize,
+                        CompressedSize = (uint)compressedSize,
+                        Size = size,
+                        IsCompressed = (flags & 0x10) != 0,
                         IsDirectory = true,
                     });
                 }
-                else if (meta is TobjEntry tobj)
+                else if (chunkType == MetadataChunkType.Image)
                 {
+                    // Skip 8 bytes ahead (past the sample chunk,
+                    // which is also empty) to go directly to the
+                    // mip tail payload.
+                    mr.ReadUInt64();
+
+                    var meta = new PackedTobjDdsMetadata
+                    {
+                        TextureWidth = mr.ReadUInt16() + 1,
+                        TextureHeight = mr.ReadUInt16() + 1,
+                        ImgFlags = new FlagField(mr.ReadUInt32()),
+                        SampleFlags = new FlagField(mr.ReadUInt32())
+                    };
+                    var compressedSizeBytes = mr.ReadBytes(3);
+                    var compressedSizeMsbAndCompressedFlag = mr.ReadByte();
+                    var compressedSize = compressedSizeBytes[0]
+                        + (compressedSizeBytes[1] << 8)
+                        + (compressedSizeBytes[2] << 16)
+                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
+                    var flags = (compressedSizeMsbAndCompressedFlag & 0xF0);
+                    var unknown3 = mr.ReadBytes(8);
+                    var offsetBlock = mr.ReadUInt32();
+
                     Entries.Add(entry.Hash, new EntryV2()
                     {
                         Hash = entry.Hash,
-                        Offset = meta.Offset,
-                        CompressedSize = meta.CompressedSize,
-                        Size = tobj.CompressedSize,
-                        IsCompressed = tobj.IsCompressed,
+                        Offset = offsetBlock * blockSize,
+                        CompressedSize = (uint)compressedSize,
+                        Size = (uint)compressedSize,
+                        IsCompressed = (flags & 0x10) != 0,
                         IsDirectory = false,
-                        TobjMetadata = tobj.Metadata,
+                        TobjMetadata = meta,
                     });
                 }
                 else
                 {
-                    throw new NotImplementedException($"Unhandled MetadataTableEntry type {meta.GetType().Name}");
-                }             
-            }
-        }
-
-        private Dictionary<uint, IMetadataTableEntry> ReadMetadataTable()
-        {
-            Reader.BaseStream.Position = (long)metadataTableStart;
-
-            var metadataTableBuffer = DecompressZLib(Reader.ReadBytes((int)metadataTableLength));
-            using var metadataTableStream = new MemoryStream(metadataTableBuffer);
-            using var r = new BinaryReader(metadataTableStream);
-            var metaEntries = new Dictionary<uint, IMetadataTableEntry>();
-
-            const ulong blockSize = 16UL;
-            while (r.BaseStream.Position < r.BaseStream.Length)
-            {
-                var indexBytes = r.ReadBytes(3);
-                var index = indexBytes[0]
-                    + (indexBytes[1] << 8)
-                    + (indexBytes[2] << 16);
-                var type = (MetadataTableEntryType)r.ReadByte();
-
-                if (type == MetadataTableEntryType.Plain)
-                {
-                    // a regular file.
-                    var compressedSizeBytes = r.ReadBytes(3);
-                    var compressedSizeMsbAndCompressedFlag = r.ReadByte();
-                    var compressedSize = compressedSizeBytes[0]
-                        + (compressedSizeBytes[1] << 8)
-                        + (compressedSizeBytes[2] << 16)
-                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
-                    var size = r.ReadUInt32();
-                    var unknown2 = r.ReadUInt32();
-                    var offsetBlock = r.ReadUInt32();
-
-                    var metaEntry = new PlainEntry
-                    {
-                        Index = (uint)index,
-                        Offset = offsetBlock * blockSize,
-                        CompressedSize = (uint)compressedSize,
-                        Size = size,
-                        Flags = (byte)(compressedSizeMsbAndCompressedFlag & 0xF0)
-                    };
-                    metaEntries.Add((uint)index, metaEntry);
-                }
-                else if (type == MetadataTableEntryType.Directory)
-                {
-                    // a directory listing.
-                    var compressedSizeBytes = r.ReadBytes(3);
-                    var compressedSizeMsbAndCompressedFlag = r.ReadByte();
-                    var compressedSize = compressedSizeBytes[0]
-                        + (compressedSizeBytes[1] << 8)
-                        + (compressedSizeBytes[2] << 16)
-                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
-                    var size = r.ReadUInt32();
-                    var unknown2 = r.ReadUInt32();
-                    var offsetBlock = r.ReadUInt32();
-
-                    var metaEntry = new DirectoryEntry
-                    {
-                        Index = (uint)index,
-                        Offset = offsetBlock * blockSize,
-                        CompressedSize = (uint)compressedSize,
-                        Size = size,
-                        Flags = (byte)(compressedSizeMsbAndCompressedFlag & 0xF0)
-                    };
-                    metaEntries.Add((uint)index, metaEntry);
-                }
-                else if (type == MetadataTableEntryType.Image)
-                {   
-                    // a packed .tobj/.dds file.
-                    // this is probably not the correct way to read that metadata,
-                    // but it works, so whatever.
-                    var meta = new PackedTobjDdsMetadata();
-                    var unknown1 = r.ReadUInt64();
-                    meta.TextureWidth = r.ReadUInt16() + 1;
-                    meta.TextureHeight = r.ReadUInt16() + 1;
-                    meta.ImgFlags = new FlagField(r.ReadUInt32());
-                    meta.SampleFlags = new FlagField(r.ReadUInt32());
-                    var compressedSizeBytes = r.ReadBytes(3);
-                    var compressedSizeMsbAndCompressedFlag = r.ReadByte();
-                    var compressedSize = compressedSizeBytes[0]
-                        + (compressedSizeBytes[1] << 8) 
-                        + (compressedSizeBytes[2] << 16) 
-                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
-                    var unknown3 = r.ReadBytes(8);
-                    var offsetBlock = r.ReadUInt32();
-
-                    var metaEntry = new TobjEntry
-                    {
-                        Index = (uint)index,
-                        Offset = offsetBlock * blockSize,
-                        CompressedSize = (uint)compressedSize,
-                        IsCompressed = (compressedSizeMsbAndCompressedFlag & 0xF0) != 0,
-                        Metadata = meta
-                    };
-                    metaEntries.Add((uint)index, metaEntry);
-                }
-                else
-                {
-                    throw new NotImplementedException($"Unhandled entry type {type}");
+                    throw new NotImplementedException($"Unhandled metadata type {chunkType}");
                 }
             }
-
-            return metaEntries;
         }
 
         private Span<EntryTableEntry> ReadEntryTable()
         {
             Reader.BaseStream.Position = (long)entryTableStart;
             var entryTableBuffer = DecompressZLib(Reader.ReadBytes((int)entryTableLength));
-            var entryTable = MemoryMarshal.Cast<byte, EntryTableEntry>(entryTableBuffer.AsSpan());
+            var entryTable = MemoryMarshal.Cast<byte, EntryTableEntry>(entryTableBuffer);
             entryTable.Sort((x, y) => (int)(x.MetadataIndex - y.MetadataIndex));
             return entryTable;
         }
@@ -378,46 +338,13 @@ namespace TruckLib.HashFs
         public ushort Flags;
     }
 
-    internal interface IMetadataTableEntry
-    {
-        public uint Index { get; set; }
-        public ulong Offset { get; set; }
-        public uint CompressedSize { get; set; }
-    }
-
-    internal struct PlainEntry : IMetadataTableEntry
-    {
-        public uint Index { get; set; }
-        public ulong Offset { get; set; }
-        public uint CompressedSize { get; set; }
-        public uint Size { get; set; }
-        public byte Flags { get; set; }
-    }
-
-    internal struct DirectoryEntry : IMetadataTableEntry
-    {
-        public uint Index { get; set; }
-        public ulong Offset { get; set; }
-        public uint CompressedSize { get; set; }
-        public uint Size { get; set; }
-        public byte Flags { get; set; }
-    }
-
-    internal struct TobjEntry : IMetadataTableEntry
-    {
-        public uint Index { get; set; }
-        public ulong Offset { get; set; }
-        public uint CompressedSize { get; set; }
-        public bool IsCompressed { get; set; }
-        public PackedTobjDdsMetadata Metadata { get; set; }
-    }
-
-    internal enum MetadataTableEntryType
+    internal enum MetadataChunkType
     {
         Image = 1,
         Sample = 2,
         MipProxy = 3,
         InlineDirectory = 4,
+        Unknown = 6,
         Plain = 128,
         Directory = 129,
         Mip0 = 130,
