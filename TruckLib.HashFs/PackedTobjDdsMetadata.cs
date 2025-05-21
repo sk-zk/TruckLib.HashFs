@@ -52,7 +52,7 @@ namespace TruckLib.HashFs
                 Compress = true,
                 Unknown4 = 1,
                 Unknown10 = 1,
-                TexturePaths = new List<string> { ddsPath }
+                TexturePaths = [ddsPath],
             };
             return tobj;
         }
