@@ -21,7 +21,8 @@ namespace TruckLib.HashFs
         /// <returns>A IHashFsReader.</returns>
         public static IHashFsReader Open(string path, bool forceEntryTableAtEnd = false)
         {
-            var reader = new BinaryReader(new FileStream(path, FileMode.Open));
+            var fs = File.OpenRead(path);
+            var reader = new BinaryReader(fs);
 
             uint magic = reader.ReadUInt32();
             if ((magic & 0xFFFF) == 0x4B50) // "PK"
