@@ -40,7 +40,7 @@ namespace TruckLib.HashFs.Tests
             Assert.Equal(TobjAddr.Repeat, tobj.AddrU);
             Assert.Equal(TobjAddr.Repeat, tobj.AddrV);
             Assert.Equal(TobjAddr.Repeat, tobj.AddrW);
-            Assert.Equal(["/sample.dds"], tobj.TexturePaths);
+            Assert.Equal("/sample.dds", tobj.TexturePath);
 
             // TODO test DDS
         }

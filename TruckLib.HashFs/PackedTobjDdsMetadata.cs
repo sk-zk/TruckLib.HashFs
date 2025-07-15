@@ -50,9 +50,7 @@ namespace TruckLib.HashFs
                 AddrW = AddrW,
                 Anisotropic = true,
                 Compress = true,
-                Unknown4 = 1,
-                Unknown10 = 1,
-                TexturePaths = [ddsPath],
+                TexturePath = ddsPath,
             };
             return tobj;
         }
