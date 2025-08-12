@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace TruckLib.HashFs
 {
@@ -27,6 +28,11 @@ namespace TruckLib.HashFs
         /// The HashFS version of the archive.
         /// </summary>
         ushort Version { get; }
+
+        /// <summary>
+        /// Gets the <see cref="BinaryReader"/> instance this reader is reading from.
+        /// </summary>
+        BinaryReader BaseReader { get; }
 
         /// <summary>
         /// Checks if an entry exists and returns its type if it does.

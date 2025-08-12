@@ -23,6 +23,9 @@ namespace TruckLib.HashFs
         /// <inheritdoc/>
         public abstract ushort Version { get; }
 
+        /// <inheritdoc/>
+        public BinaryReader BaseReader => Reader;
+
         internal BinaryReader Reader { get; set; }
 
         protected const char Separator = '/';
