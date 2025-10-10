@@ -13,14 +13,20 @@ namespace TruckLib.HashFs
 {
     internal class HashFsV2Reader : HashFsReaderBase
     {
+        /// <summary>
+        /// The header of the archive.
+        /// </summary>
+        internal required HeaderV2 Header { get; init; }
+
         public override ushort Version => 2;
 
-        public Platform Platform { get; private set; }
+        public override ushort Salt
+        {
+            get => Header.Salt;
+            set => Header.Salt = value;
+        }
 
-        private ulong entryTableStart;
-        private uint entryTableLength;
-        private ulong metadataTableStart;
-        private uint metadataTableLength;
+        public Platform Platform => Header.Platform;
 
         /// <inheritdoc/>
         public override DirectoryListing GetDirectoryListing(
@@ -179,32 +185,14 @@ namespace TruckLib.HashFs
             dds.Serialize(w);
         }
 
-        internal void ParseHeader()
-        {
-            Salt = Reader.ReadUInt16();
-
-            var hashMethod = new string(Reader.ReadChars(4));
-            if (hashMethod != SupportedHashMethod)
-                throw new NotSupportedException($"Hash method \"{hashMethod}\" is not supported.");
-
-            var entriesCount = Reader.ReadUInt32();
-            entryTableLength = Reader.ReadUInt32();
-            var metadataEntriesCount = Reader.ReadUInt32();
-            metadataTableLength = Reader.ReadUInt32();
-            entryTableStart = Reader.ReadUInt64();
-            metadataTableStart = Reader.ReadUInt64();
-            var securityDescriptorOffset = Reader.ReadUInt32();
-            Platform = (Platform)Reader.ReadByte();
-        }
-
         internal void ParseEntries()
         {
             const ulong blockSize = 16UL;
 
             var entryTable = ReadEntryTable();
 
-            Reader.BaseStream.Position = (long)metadataTableStart;
-            var metadataTableBuffer = DecompressZLib(Reader.ReadBytes((int)metadataTableLength));
+            Reader.BaseStream.Position = (long)Header.MetadataTableStart;
+            var metadataTableBuffer = DecompressZLib(Reader.ReadBytes((int)Header.MetadataTableLength));
             using var metadataTableStream = new MemoryStream(metadataTableBuffer);
             using var mr = new BinaryReader(metadataTableStream);
 
@@ -314,8 +302,8 @@ namespace TruckLib.HashFs
 
         private Span<EntryTableEntry> ReadEntryTable()
         {
-            Reader.BaseStream.Position = (long)entryTableStart;
-            var entryTableBuffer = DecompressZLib(Reader.ReadBytes((int)entryTableLength));
+            Reader.BaseStream.Position = (long)Header.EntryTableStart;
+            var entryTableBuffer = DecompressZLib(Reader.ReadBytes((int)Header.EntryTableLength));
             var entryTable = MemoryMarshal.Cast<byte, EntryTableEntry>(entryTableBuffer);
             entryTable.Sort((x, y) => (int)(x.MetadataIndex - y.MetadataIndex));
             return entryTable;

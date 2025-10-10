@@ -12,13 +12,13 @@ namespace TruckLib.HashFs
     internal abstract class HashFsReaderBase : IHashFsReader
     {
         /// <inheritdoc/>
-        public string Path { get; internal set; }
+        public required string Path { get; init; }
 
         /// <inheritdoc/>
         public Dictionary<ulong, IEntry> Entries { get; } = [];
 
         /// <inheritdoc/>
-        public ushort Salt { get; set; }
+        public abstract ushort Salt { get; set; }
 
         /// <inheritdoc/>
         public abstract ushort Version { get; }
@@ -26,20 +26,17 @@ namespace TruckLib.HashFs
         /// <inheritdoc/>
         public BinaryReader BaseReader => Reader;
 
-        internal BinaryReader Reader { get; set; }
+        internal required BinaryReader Reader { get; init; }
 
         protected const char Separator = '/';
         protected const string Root = "/";
-        protected const string SupportedHashMethod = "CITY";
 
         /// <inheritdoc/>
         char IFileSystem.DirectorySeparator => Separator;
 
         /// <inheritdoc/>
-        public EntryType EntryExists(string path)
-        {
-            return TryGetEntry(path, out var _);
-        }
+        public EntryType EntryExists(string path) 
+            => TryGetEntry(path, out var _);
 
         /// <inheritdoc/>
         public EntryType TryGetEntry(string path, out IEntry entry)
@@ -150,8 +147,8 @@ namespace TruckLib.HashFs
         }
 
         /// <inheritdoc/>
-        public abstract DirectoryListing GetDirectoryListing(
-            IEntry entry, bool filesOnly = false);
+        public abstract DirectoryListing GetDirectoryListing(IEntry entry,
+            bool filesOnly = false);
 
         /// <inheritdoc/>
         public IEntry GetEntry(string path)
@@ -187,7 +184,7 @@ namespace TruckLib.HashFs
             Reader.Dispose();
         }
 
-        protected void MakePathsAbsolute(string parent, List<string> paths)
+        protected static void MakePathsAbsolute(string parent, List<string> paths)
         {
             for (int i = 0; i < paths.Count; i++)
             {
@@ -198,7 +195,7 @@ namespace TruckLib.HashFs
             }
         }
 
-        protected string RemoveTrailingSlash(string path)
+        protected static string RemoveTrailingSlash(string path)
         {
             if (path.EndsWith(Separator) && path != Root)
             {
@@ -210,6 +207,7 @@ namespace TruckLib.HashFs
         protected virtual byte[] GetEntryContent(IEntry entry)
         {
             Reader.BaseStream.Position = (long)entry.Offset;
+
             byte[] file;
             if (entry.IsCompressed)
             {
@@ -230,7 +228,7 @@ namespace TruckLib.HashFs
             return file;
         }
 
-        protected byte[] DecompressZLib(Stream input)
+        protected static byte[] DecompressZLib(Stream input)
         {
             using var zlibStream = new ZLibStream(input, CompressionMode.Decompress);
             using var output = new MemoryStream();
@@ -239,7 +237,7 @@ namespace TruckLib.HashFs
             return decompressed;
         }
 
-        protected byte[] DecompressZLib(byte[] buffer)
+        protected static byte[] DecompressZLib(byte[] buffer)
         {
             using var ms = new MemoryStream(buffer);
             return DecompressZLib(ms);

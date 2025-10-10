@@ -28,7 +28,8 @@ namespace TruckLib.HashFs
         public uint CompressedSize { get; internal set; }
 
         /// <inheritdoc/>
-        public bool IsDirectory {
+        public bool IsDirectory 
+        {
             get =>  Flags[0];
             set => Flags[0] = value;
         }

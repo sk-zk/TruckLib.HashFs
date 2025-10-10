@@ -8,19 +8,31 @@ namespace TruckLib.HashFs
 {
     internal class HashFsV1Reader : HashFsReaderBase
     {
+        /// <summary>
+        /// The header of the archive.
+        /// </summary>
+        internal required HeaderV1 Header { get; init; }
+
+        /// <inheritdoc/>
         public override ushort Version => 1;
 
-        private uint entriesCount;
-        private uint startOffset;
+        /// <inheritdoc/>
+        public override ushort Salt 
+        { 
+            get => Header.Salt; 
+            set => Header.Salt = value;
+        }
 
         // Fixes Extractor#6; see comment in `ParseEntryTable`.
-        private List<IEntry> duplicateDirListings = [];
+        private readonly List<IEntry> duplicateDirListings = [];
 
         private readonly char[] newlineChars = ['\r', '\n'];
 
+        private const string DirMarker = "*";
+
         /// <inheritdoc/>
-        public override DirectoryListing GetDirectoryListing(
-            IEntry entry, bool filesOnly = false)
+        public override DirectoryListing GetDirectoryListing(IEntry entry, 
+            bool filesOnly = false)
         {
             var subdirs = new List<string>();
             var files = new List<string>();
@@ -30,15 +42,15 @@ namespace TruckLib.HashFs
             foreach (var e in (new[] { entry }).Concat(additional)) 
             {
                 var entryContent = GetEntryContent(e);
-                var dirEntries = Encoding.ASCII.GetString(entryContent)
+                var dirEntries = Encoding.UTF8.GetString(entryContent)
                     .Split(newlineChars, StringSplitOptions.RemoveEmptyEntries);
                 for (int i = 0; i < dirEntries.Length; i++)
                 {
-                    const string dirMarker = "*";
                     // is directory
-                    if (dirEntries[i].StartsWith(dirMarker))
+                    if (dirEntries[i].StartsWith(DirMarker))
                     {
-                        if (filesOnly) continue;
+                        if (filesOnly)
+                            continue;
                         var subPath = dirEntries[i][1..];
                         subdirs.Add(subPath);
                     }
@@ -52,25 +64,13 @@ namespace TruckLib.HashFs
             return new DirectoryListing(subdirs, files);
         }
 
-        internal void ParseHeader()
-        {
-            Salt = Reader.ReadUInt16();
-
-            var hashMethod = new string(Reader.ReadChars(4));
-            if (hashMethod != SupportedHashMethod)
-                throw new NotSupportedException($"Hash method \"{hashMethod}\" is not supported.");
-
-            entriesCount = Reader.ReadUInt32();
-            startOffset = Reader.ReadUInt32();
-        }
-
         internal void ParseEntryTable(bool forceEntryTableAtEnd)
         {
             Reader.BaseStream.Position = forceEntryTableAtEnd 
-                ? Reader.BaseStream.Length - (entriesCount * 32) 
-                : startOffset;
+                ? Reader.BaseStream.Length - (Header.NumEntries * 32) 
+                : Header.StartOffset;
 
-            for (int i = 0; i < entriesCount; i++)
+            for (int i = 0; i < Header.NumEntries; i++)
             {
                 var entry = new EntryV1
                 {
@@ -81,7 +81,9 @@ namespace TruckLib.HashFs
                     Size = Reader.ReadUInt32(),
                     CompressedSize = Reader.ReadUInt32()
                 };
+
                 var success = Entries.TryAdd(entry.Hash, entry);
+
                 if (!success)
                 {
                     var existing = Entries[entry.Hash];
@@ -95,12 +97,10 @@ namespace TruckLib.HashFs
                         // is called for that path.
                         duplicateDirListings.Add(entry);
                     }
-                    else
-                    {
-                        // just keep the first one.
-                    }
+                    // otherwise, just keep the first one.
                 }
             }
         }
+
     }
 }

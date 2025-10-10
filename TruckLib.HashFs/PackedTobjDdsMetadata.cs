@@ -34,7 +34,7 @@ namespace TruckLib.HashFs
         /// Creates a <see cref="Tobj"/> object from the metadata.
         /// </summary>
         /// <param name="tobjPath">The absolute path of the .tobj file, 
-        /// e.g. <c>"/model/wall/anti_noise.tobj"</c>.</param>
+        /// e.g. <c>/model/wall/anti_noise.tobj</c>.</param>
         /// <returns>A <see cref="Tobj"/> object.</returns>
         public Tobj AsTobj(string tobjPath)
         {

@@ -26,7 +26,7 @@
         uint CompressedSize { get; }
 
         /// <summary>
-        /// If true, the entry is a directory listing.
+        /// Whether the entry is a directory listing.
         /// </summary>
         bool IsDirectory { get; set; }
 

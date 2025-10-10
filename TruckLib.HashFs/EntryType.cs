@@ -1,7 +1,7 @@
 ﻿namespace TruckLib.HashFs
 {
     /// <summary>
-    /// Return type for HashFsReader.EntryExists().
+    /// Return type for <see cref="IHashFsReader.EntryExists"/>.
     /// </summary>
     public enum EntryType
     {
