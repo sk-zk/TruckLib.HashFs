@@ -250,6 +250,12 @@ namespace TruckLib.HashFs
         }
 
         /// <inheritdoc/>
+        bool IFileSystem.DirectoryExists(string path)
+        {
+            return EntryExists(path) == EntryType.Directory;
+        }
+
+        /// <inheritdoc/>
         IList<string> IFileSystem.GetFiles(string path)
         {
             var dirlist = GetDirectoryListing(path, true, true);

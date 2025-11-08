@@ -140,6 +140,16 @@ namespace TruckLib.HashFs.Tests
             });
         }
 
+        [Fact]
+        public void DirectoryExists()
+        {
+            Assert.True(reader.DirectoryExists("/somedir"));
+            Assert.True(reader.DirectoryExists("somedir"));
+            Assert.True(reader.DirectoryExists("/"));
+            Assert.False(reader.DirectoryExists("/nosuchdir"));
+            Assert.False(reader.DirectoryExists("nosuchdir"));
+        }
+
         public void Dispose()
         {
             reader.Dispose();

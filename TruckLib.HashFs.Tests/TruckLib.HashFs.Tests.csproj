@@ -28,6 +28,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Data\AssetLoaderTest\archive_a.scs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\AssetLoaderTest\archive_b.scs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\bigtexture_v2.scs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
