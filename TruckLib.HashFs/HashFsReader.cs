@@ -11,6 +11,17 @@ namespace TruckLib.HashFs
     {
         private const string SupportedHashMethod = "CITY";
 
+
+        /// <summary>
+        /// Opens a HashFS archive.
+        /// </summary>
+        /// <param name="path">The path to the HashFS archive.</param>
+        /// <returns>A IHashFsReader.</returns>
+        public static IHashFsReader Open(string path)
+        {
+            return Open(path, false);
+        }
+
         /// <summary>
         /// Opens a HashFS archive.
         /// </summary>
@@ -19,7 +30,7 @@ namespace TruckLib.HashFs
         /// from the end of the file, regardless of where the archive header says they are located.
         /// Only supported for v1.</param>
         /// <returns>A IHashFsReader.</returns>
-        public static IHashFsReader Open(string path, bool forceEntryTableAtEnd = false)
+        public static IHashFsReader Open(string path, bool forceEntryTableAtEnd)
         {
             var fs = File.OpenRead(path);
             var reader = new BinaryReader(fs);
