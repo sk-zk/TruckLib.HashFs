@@ -28,12 +28,18 @@ namespace TruckLib.HashFs
 
         public Platform Platform => Header.Platform;
 
+        /// <summary>
+        /// The character used in directory listing files to indicate that
+        /// an element is a directory rather than a file.
+        /// </summary>
+        internal const char DirMarker = '/';
+
         /// <inheritdoc/>
         public override DirectoryListing GetDirectoryListing(
             IEntry entry, bool filesOnly = false)
         {
-            var bytes = GetEntryContent(entry);
-            using var ms = new MemoryStream(bytes);
+            var arr = GetEntryContent(entry);
+            using var ms = new MemoryStream(arr);
             using var dirReader = new BinaryReader(ms);
 
             var count = dirReader.ReadUInt32();
@@ -46,11 +52,10 @@ namespace TruckLib.HashFs
             {
                 var str = Encoding.UTF8.GetString(dirReader.ReadBytes(stringLengths[i]));
                 // is directory
-                if (str.StartsWith('/'))
+                if (str.StartsWith(DirMarker))
                 {
-                    if (filesOnly) continue;
-                    var subPath = str[1..];
-                    subdirs.Add(subPath);
+                    if (!filesOnly)
+                        subdirs.Add(str[1..]);
                 }
                 // is file
                 else

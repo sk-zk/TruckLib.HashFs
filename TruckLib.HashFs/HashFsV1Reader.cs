@@ -28,7 +28,11 @@ namespace TruckLib.HashFs
 
         private readonly char[] newlineChars = ['\r', '\n'];
 
-        internal const string DirMarker = "*";
+        /// <summary>
+        /// The character used in directory listing files to indicate that
+        /// an element is a directory rather than a file.
+        /// </summary>
+        internal const char DirMarker = '*';
 
         /// <inheritdoc/>
         public override DirectoryListing GetDirectoryListing(IEntry entry, 
