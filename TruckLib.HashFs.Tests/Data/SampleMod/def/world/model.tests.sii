@@ -1,0 +1,9 @@
+SiiNunit
+{
+
+model_def : model.test0
+{
+    model_desc: "/model/simple_cube/simple_cube.pmd"
+}
+
+}

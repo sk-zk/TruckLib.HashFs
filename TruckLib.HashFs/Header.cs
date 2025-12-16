@@ -11,7 +11,7 @@ namespace TruckLib.HashFs
     internal abstract class Header
     {
         public const uint Magic = 0x23534353; // "SCS#"
-        public ushort Version { get; set; }
+        public ushort Version { get; init; }
         public ushort Salt { get; set; }
         public string HashMethod { get; set; }
         public uint NumEntries { get; set; }
@@ -30,7 +30,6 @@ namespace TruckLib.HashFs
             {
                 case 1:
                     var h1 = new HeaderV1();
-                    h1.Version = version;
                     h1.Salt = r.ReadUInt16();
                     h1.HashMethod = new string(r.ReadChars(4));
                     h1.NumEntries = r.ReadUInt32();
@@ -38,7 +37,6 @@ namespace TruckLib.HashFs
                     return h1;
                 case 2:
                     var h2 = new HeaderV2();
-                    h2.Version = version;
                     h2.Salt = r.ReadUInt16();
                     h2.HashMethod = new string(r.ReadChars(4));
                     h2.NumEntries = r.ReadUInt32();
@@ -59,6 +57,21 @@ namespace TruckLib.HashFs
     internal class HeaderV1 : Header
     {
         public uint StartOffset { get; set; }
+
+        public HeaderV1()
+        {
+            Version = 1;
+        }
+
+        public void Serialize(BinaryWriter w)
+        {
+            w.Write(Magic);
+            w.Write(Version);
+            w.Write(Salt);
+            w.Write(Encoding.ASCII.GetBytes(HashMethod));
+            w.Write(NumEntries);
+            w.Write(StartOffset);
+        }
     }
 
     internal class HeaderV2 : Header
@@ -70,5 +83,10 @@ namespace TruckLib.HashFs
         public ulong MetadataTableStart { get; set; }
         public uint SecurityDescriptorOffset { get; set; }
         public Platform Platform { get; set; }
+
+        public HeaderV2()
+        {
+            Version = 2;
+        }
     }
 }

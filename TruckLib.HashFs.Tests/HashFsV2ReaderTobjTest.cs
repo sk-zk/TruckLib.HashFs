@@ -8,11 +8,11 @@ using TruckLib.Models;
 
 namespace TruckLib.HashFs.Tests
 {
-    public class HashFsV2TobjTest : IDisposable
+    public class HashFsV2ReaderTobjTest : IDisposable
     {
         IHashFsReader reader;
 
-        public HashFsV2TobjTest()
+        public HashFsV2ReaderTobjTest()
         {
             reader = HashFsReader.Open("Data/tobj_v2.scs");
         }

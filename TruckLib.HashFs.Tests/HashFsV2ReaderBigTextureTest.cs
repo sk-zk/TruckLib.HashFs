@@ -9,14 +9,14 @@ using TruckLib.Models;
 namespace TruckLib.HashFs.Tests
 {
 
-    public class HashFsV2BigTextureTest : IDisposable
+    public class HashFsV2ReaderBigTextureTest : IDisposable
     {
         // Loads a tobj/dds entry larger than 2^24 bytes to ensure that
         // CompressedSize has been read correctly.
 
         IHashFsReader reader;
 
-        public HashFsV2BigTextureTest()
+        public HashFsV2ReaderBigTextureTest()
         {
             reader = HashFsReader.Open("Data/bigtexture_v2.scs");
         }

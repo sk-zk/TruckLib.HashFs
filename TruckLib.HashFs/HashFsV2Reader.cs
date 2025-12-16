@@ -105,7 +105,7 @@ namespace TruckLib.HashFs
             {
                 RecreateTobj(v2, entryPath, fileStream);
                 using var ddsFileStream = new FileStream(
-                    System.IO.Path.ChangeExtension(outputPath, "dds"),
+                    Path.ChangeExtension(outputPath, "dds"),
                     FileMode.Create);
                 RecreateDds(v2, ddsFileStream);
             }

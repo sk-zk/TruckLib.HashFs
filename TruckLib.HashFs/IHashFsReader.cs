@@ -10,11 +10,6 @@ namespace TruckLib.HashFs
     public interface IHashFsReader : IDisposable, IFileSystem
     {
         /// <summary>
-        /// Gets the file path of the HashFS archive which this reader is reading from.
-        /// </summary>
-        string Path { get; }
-
-        /// <summary>
         /// The entries in this archive.
         /// </summary>
         Dictionary<ulong, IEntry> Entries { get; }
@@ -116,14 +111,5 @@ namespace TruckLib.HashFs
         /// <param name="entry">The entry.</param>
         /// <returns>The entry type.</returns>
         EntryType TryGetEntry(string path, out IEntry entry);
-
-        /// <summary>
-        /// Hashes a file path.
-        /// </summary>
-        /// <param name="path">The path.</param>
-        /// <param name="salt">If set, this salt will be used to hash the path rather than
-        /// the one specified by the archive's header.</param>
-        /// <returns>The hash of the path.</returns>
-        ulong HashPath(string path, uint? salt = null);
     }
 }

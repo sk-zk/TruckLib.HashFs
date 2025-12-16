@@ -1,0 +1,12 @@
+effect : "eut2.dif.spec.rfx" {
+	additional_ambient : 0.000000
+	diffuse : { 1.000000 , 1.000000 , 1.000000 }
+	reflection : 1.000000
+	shininess : 50.000000
+	specular : { 1.000000 , 1.000000 , 1.000000 }
+	texture : "texture_base" {
+		source : "/model/simple_cube/cubetx.tobj"
+		u_address : clamp
+		v_address : clamp
+	}
+}

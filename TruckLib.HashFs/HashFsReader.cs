@@ -11,7 +11,6 @@ namespace TruckLib.HashFs
     {
         private const string SupportedHashMethod = "CITY";
 
-
         /// <summary>
         /// Opens a HashFS archive.
         /// </summary>
@@ -33,7 +32,30 @@ namespace TruckLib.HashFs
         public static IHashFsReader Open(string path, bool forceEntryTableAtEnd)
         {
             var fs = File.OpenRead(path);
-            var reader = new BinaryReader(fs);
+            return Open(fs, forceEntryTableAtEnd);
+        }
+
+        /// <summary>
+        /// Opens a HashFS archive.
+        /// </summary>
+        /// <param name="stream">The stream containing the HashFS archive.</param>
+        /// <returns>A IHashFsReader.</returns>
+        public static IHashFsReader Open(Stream stream)
+        {
+            return Open(stream, false);
+        }
+
+        /// <summary>
+        /// Opens a HashFS archive.
+        /// </summary>
+        /// <param name="stream">The stream containing the HashFS archive.</param>
+        /// <param name="forceEntryTableAtEnd">If true, the entry table will be read
+        /// from the end of the file, regardless of where the archive header says they are located.
+        /// Only supported for v1.</param>
+        /// <returns>A IHashFsReader.</returns>
+        public static IHashFsReader Open(Stream stream, bool forceEntryTableAtEnd)
+        {
+            var reader = new BinaryReader(stream);
 
             var header = Header.Deserialize(reader);
 
@@ -47,7 +69,6 @@ namespace TruckLib.HashFs
                 case 1:
                     var h1 = new HashFsV1Reader
                     {
-                        Path = path,
                         Reader = reader,
                         Header = (HeaderV1)header,
                     };
@@ -56,7 +77,6 @@ namespace TruckLib.HashFs
                 case 2:
                     var h2 = new HashFsV2Reader
                     {
-                        Path = path,
                         Reader = reader,
                         Header = (HeaderV2)header,
                     };

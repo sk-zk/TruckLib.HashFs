@@ -7,11 +7,11 @@ using System.IO.Hashing;
 
 namespace TruckLib.HashFs.Tests
 {
-    public class HashFsV2Test : IDisposable
+    public class HashFsV2ReaderTest : IDisposable
     {
         IHashFsReader reader;
 
-        public HashFsV2Test() 
+        public HashFsV2ReaderTest() 
         {
             reader = HashFsReader.Open("Data/simple_v2.scs");
         }
@@ -117,18 +117,6 @@ namespace TruckLib.HashFs.Tests
             Assert.Equal(4096U, entry.Offset);
             Assert.True(entry.IsCompressed);
             Assert.False(entry.IsDirectory);
-        }
-
-        [Fact]
-        public void HashPath()
-        {
-            var expected = 8645157520230346068UL;
-
-            var actual = reader.HashPath("/käsefondue.txt");
-            Assert.Equal(expected, actual);
-
-            actual = reader.HashPath("käsefondue.txt");
-            Assert.Equal(expected, actual);
         }
 
         [Fact]

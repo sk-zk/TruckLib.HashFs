@@ -28,7 +28,7 @@ namespace TruckLib.HashFs
 
         private readonly char[] newlineChars = ['\r', '\n'];
 
-        private const string DirMarker = "*";
+        internal const string DirMarker = "*";
 
         /// <inheritdoc/>
         public override DirectoryListing GetDirectoryListing(IEntry entry, 

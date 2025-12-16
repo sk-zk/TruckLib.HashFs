@@ -12,9 +12,6 @@ namespace TruckLib.HashFs
     internal abstract class HashFsReaderBase : IHashFsReader
     {
         /// <inheritdoc/>
-        public required string Path { get; init; }
-
-        /// <inheritdoc/>
         public Dictionary<ulong, IEntry> Entries { get; } = [];
 
         /// <inheritdoc/>
@@ -42,7 +39,7 @@ namespace TruckLib.HashFs
         public EntryType TryGetEntry(string path, out IEntry entry)
         {
             path = RemoveTrailingSlash(path);
-            var hash = HashPath(path);
+            var hash = Util.HashPath(path, Salt);
             if (Entries.TryGetValue(hash, out entry))
             {
                 return entry.IsDirectory
@@ -96,7 +93,7 @@ namespace TruckLib.HashFs
                 return;
             }
 
-            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(outputPath));
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
             Reader.BaseStream.Position = (long)entry.Offset;
             using var fileStream = new FileStream(outputPath, FileMode.Create);
             if (entry.IsCompressed)
@@ -154,25 +151,9 @@ namespace TruckLib.HashFs
         public IEntry GetEntry(string path)
         {
             path = RemoveTrailingSlash(path);
-            ulong hash = HashPath(path);
+            ulong hash = Util.HashPath(path, Salt);
             var entry = Entries[hash];
             return entry;
-        }
-
-        /// <inheritdoc/>
-        public ulong HashPath(string path, uint? salt = null)
-        {
-            if (path != "" && path.StartsWith(Separator))
-                path = path[1..];
-
-            // TODO do salts work the same way in v2?
-            salt ??= Salt;
-            if (salt != 0)
-                path = salt + path;
-
-            var bytes = Encoding.UTF8.GetBytes(path);
-            var hash = CityHash.CityHash64(bytes, (ulong)bytes.Length);
-            return hash;
         }
 
         /// <summary>
