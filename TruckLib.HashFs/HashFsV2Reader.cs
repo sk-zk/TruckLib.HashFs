@@ -304,7 +304,7 @@ namespace TruckLib.HashFs
         {
             Reader.BaseStream.Position = (long)Header.EntryTableStart;
             var entryTableBuffer = DecompressZLib(Reader.ReadBytes((int)Header.EntryTableLength));
-            var entryTable = MemoryMarshal.Cast<byte, EntryTableEntry>(entryTableBuffer);
+            var entryTable = MemoryMarshal.Cast<byte, EntryTableEntry>(entryTableBuffer.AsSpan());
             entryTable.Sort((x, y) => (int)(x.MetadataIndex - y.MetadataIndex));
             return entryTable;
         }
