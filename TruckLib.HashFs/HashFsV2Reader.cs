@@ -192,115 +192,89 @@ namespace TruckLib.HashFs
 
         internal void ParseEntries()
         {
-            const ulong blockSize = 16UL;
-
             var entryTable = ReadEntryTable();
+            ReadMetadataTableAndCreateEntries(entryTable);
+        }
 
+        internal const ulong BlockSize = 16UL;
+
+        private void ReadMetadataTableAndCreateEntries(Span<EntryTableEntry> entryTable)
+        {
             Reader.BaseStream.Position = (long)Header.MetadataTableStart;
             var metadataTableBuffer = DecompressZLib(Reader.ReadBytes((int)Header.MetadataTableLength));
             using var metadataTableStream = new MemoryStream(metadataTableBuffer);
             using var mr = new BinaryReader(metadataTableStream);
 
+            var meta = new MainMetadata();
+
             foreach (var entry in entryTable)
             {
                 mr.BaseStream.Position = entry.MetadataIndex * 4;
 
-                var indexBytes = mr.ReadBytes(3);
-                var index = indexBytes[0] + (indexBytes[1] << 8) + (indexBytes[2] << 16);
-
-                var chunkType = (MetadataChunkType)mr.ReadByte();
-                if (chunkType == MetadataChunkType.Plain)
+                var chunkTypes = new MetadataChunkType[entry.MetadataCount];
+                for (int i = 0; i < entry.MetadataCount; i++)
                 {
-                    if (entry.MetadataCount == 2)
-                    {
-                        // Skip 4 bytes ahead to go to directly
-                        // to the payload of chunk type 6.
-                        // Don't know what the deal with that is
-                        mr.ReadUInt32();
-                    }
+                    var pos = mr.BaseStream.Position;
+                    var indexBytes = mr.ReadBytes(3);
+                    var index = indexBytes[0] + (indexBytes[1] << 8) + (indexBytes[2] << 16);
+                    var chunkType = (MetadataChunkType)mr.ReadByte();
+                    chunkTypes[i] = chunkType;
+                    // I don't think we need the index for anything?
+                }
 
-                    var compressedSizeBytes = mr.ReadBytes(3);
-                    var compressedSizeMsbAndCompressedFlag = mr.ReadByte();
-                    var compressedSize = compressedSizeBytes[0]
-                        + (compressedSizeBytes[1] << 8)
-                        + (compressedSizeBytes[2] << 16)
-                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
-                    var flags = (byte)(compressedSizeMsbAndCompressedFlag & 0xF0);
-                    var size = mr.ReadUInt32();
-                    var unknown2 = mr.ReadUInt32();
-                    var offsetBlock = mr.ReadUInt32();
+                if (chunkTypes[0] == MetadataChunkType.Plain)
+                {
+                    meta.Deserialize(mr);
 
                     Entries.Add(entry.Hash, new EntryV2()
                     {
                         Hash = entry.Hash,
-                        Offset = offsetBlock * blockSize,
-                        CompressedSize = (uint)compressedSize,
-                        Size = size,
-                        IsCompressed = (flags & 0x10) != 0,
+                        Offset = meta.Offset,
+                        CompressedSize = meta.CompressedSize,
+                        Size = meta.Size,
+                        IsCompressed = meta.IsCompressed,
                         IsDirectory = false,
                     });
                 }
-                else if (chunkType == MetadataChunkType.Directory)
+                else if (chunkTypes[0] == MetadataChunkType.Directory)
                 {
-                    var compressedSizeBytes = mr.ReadBytes(3);
-                    var compressedSizeMsbAndCompressedFlag = mr.ReadByte();
-                    var compressedSize = compressedSizeBytes[0]
-                        + (compressedSizeBytes[1] << 8)
-                        + (compressedSizeBytes[2] << 16)
-                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
-                    var flags = (byte)(compressedSizeMsbAndCompressedFlag & 0xF0);
-                    var size = mr.ReadUInt32();
-                    var unknown2 = mr.ReadUInt32();
-                    var offsetBlock = mr.ReadUInt32();
+                    meta.Deserialize(mr);
 
                     Entries.Add(entry.Hash, new EntryV2()
                     {
                         Hash = entry.Hash,
-                        Offset = offsetBlock * blockSize,
-                        CompressedSize = (uint)compressedSize,
-                        Size = size,
-                        IsCompressed = (flags & 0x10) != 0,
+                        Offset = meta.Offset,
+                        CompressedSize = meta.CompressedSize,
+                        Size = meta.Size,
+                        IsCompressed = meta.IsCompressed,
                         IsDirectory = true,
                     });
                 }
-                else if (chunkType == MetadataChunkType.Image)
+                else if (chunkTypes[0] == MetadataChunkType.Image)
                 {
-                    // Skip 8 bytes ahead (past the sample chunk,
-                    // which is also empty) to go directly to the
-                    // mip tail payload.
-                    mr.ReadUInt64();
-
-                    var meta = new PackedTobjDdsMetadata
+                    var tobjMeta = new PackedTobjDdsMetadata
                     {
                         TextureWidth = mr.ReadUInt16() + 1,
                         TextureHeight = mr.ReadUInt16() + 1,
                         ImgFlags = new FlagField(mr.ReadUInt32()),
                         SampleFlags = new FlagField(mr.ReadUInt32())
                     };
-                    var compressedSizeBytes = mr.ReadBytes(3);
-                    var compressedSizeMsbAndCompressedFlag = mr.ReadByte();
-                    var compressedSize = compressedSizeBytes[0]
-                        + (compressedSizeBytes[1] << 8)
-                        + (compressedSizeBytes[2] << 16)
-                        + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24);
-                    var flags = (compressedSizeMsbAndCompressedFlag & 0xF0);
-                    var unknown3 = mr.ReadBytes(8);
-                    var offsetBlock = mr.ReadUInt32();
+                    meta.Deserialize(mr);
 
                     Entries.Add(entry.Hash, new EntryV2()
                     {
                         Hash = entry.Hash,
-                        Offset = offsetBlock * blockSize,
-                        CompressedSize = (uint)compressedSize,
-                        Size = (uint)compressedSize,
-                        IsCompressed = (flags & 0x10) != 0,
+                        Offset = meta.Offset,
+                        CompressedSize = meta.CompressedSize,
+                        Size = meta.CompressedSize,
+                        IsCompressed = meta.IsCompressed,
                         IsDirectory = false,
-                        TobjMetadata = meta,
+                        TobjMetadata = tobjMeta,
                     });
                 }
                 else
                 {
-                    throw new NotImplementedException($"Unhandled metadata type {chunkType}");
+                    throw new NotImplementedException($"Unhandled metadata type {chunkTypes[0]}");
                 }
             }
         }
@@ -337,11 +311,59 @@ namespace TruckLib.HashFs
         Sample = 2,
         MipProxy = 3,
         InlineDirectory = 4,
-        Unknown = 6,
+        Unknown6 = 6,
         Plain = 128,
         Directory = 129,
         Mip0 = 130,
         Mip1 = 131,
         MipTail = 132,
+    }
+
+    internal struct MainMetadata : IBinarySerializable
+    {
+        public uint CompressedSize;
+
+        public uint Size;
+
+        public uint Unknown;
+
+        public uint OffsetBlock;
+
+        public readonly ulong Offset => OffsetBlock * HashFsV2Reader.BlockSize;
+
+        private FlagField flags;
+
+        public bool IsCompressed 
+        {
+            get => flags[4];
+            set => flags[4] = value;
+        } 
+
+        public void Deserialize(BinaryReader r, uint? version = null)
+        {
+            var compressedSizeBytes = r.ReadBytes(3);
+            var compressedSizeMsbAndCompressedFlag = r.ReadByte();
+            CompressedSize = (uint)(
+                compressedSizeBytes[0]
+                + (compressedSizeBytes[1] << 8)
+                + (compressedSizeBytes[2] << 16)
+                + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24)
+                );
+            flags = new FlagField(compressedSizeMsbAndCompressedFlag & 0xF0u);
+            Size = r.ReadUInt32();
+            Unknown = r.ReadUInt32();
+            OffsetBlock = r.ReadUInt32();
+        }
+
+        public void Serialize(BinaryWriter w)
+        {
+            w.Write((byte)CompressedSize);
+            w.Write((byte)(CompressedSize >> 8));
+            w.Write((byte)(CompressedSize >> 16));
+            w.Write((byte)((byte)(CompressedSize >> 24 & 0x0F) | (flags.Bits & 0xF0)));
+            w.Write(Size);
+            w.Write(Unknown);
+            w.Write(OffsetBlock);
+        }
     }
 }
