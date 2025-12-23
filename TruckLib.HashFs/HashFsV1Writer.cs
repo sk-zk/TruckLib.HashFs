@@ -4,7 +4,6 @@ using System.IO;
 using System.IO.Compression;
 using System.IO.Hashing;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,30 +32,32 @@ namespace TruckLib.HashFs
         {
             using var w = new BinaryWriter(stream, Encoding.UTF8, true);
 
-            // 1) Generate directory listing files
+            // Generate directory listing files
             var dirLists = GenerateDirectoryListings(stream, tree, "/");
 
-            // 2) Write the header
-            var numEntries = (uint)(files.Count + dirLists.Count);
-            WriteHeader(w, numEntries);
-
-            // 3) Write the files and generate the entry table
+            // Write the files and generate the entry table
             var entryMetadata = WriteFiles(stream, files.Concat(dirLists));
 
-            // 4) Write the entry table
+            // Write the entry table
             var entryTableOffset = (ulong)stream.Position;
             foreach (var entry in entryMetadata.OrderBy(x => x.Hash))
             {
                 entry.Serialize(w);
             }
 
-            // 5) Add a version number at the end for future debugging purposes
+            // Add a version number at the end for future debugging purposes
             WriteWatermark(w);
 
-            // 6) Jump back to the header and fill in the start offset
-            // of the entry table
-            stream.Position = 0x10;
-            w.Write(entryTableOffset);
+            // Write the header
+            stream.Position = 0;
+            var header = new HeaderV1()
+            {
+                Salt = Salt,
+                HashMethod = "CITY",
+                NumEntries = (uint)(files.Count + dirLists.Count),
+                StartOffset = (uint)entryTableOffset,
+            };
+            header.Serialize(w);
         }
 
         private List<EntryV1> WriteFiles(Stream stream, IEnumerable<KeyValuePair<string, IFile>> files)
@@ -72,18 +73,6 @@ namespace TruckLib.HashFs
             }
 
             return entryMetadata;
-        }
-
-        private void WriteHeader(BinaryWriter w, uint numEntries)
-        {
-            var header = new HeaderV1()
-            {
-                Salt = Salt,
-                HashMethod = "CITY",
-                NumEntries = numEntries,
-                StartOffset = 0, // we'll fill this in later
-            };
-            header.Serialize(w);
         }
 
         private static Dictionary<string, IFile> GenerateDirectoryListings(Stream stream, Directory dir, 
