@@ -9,25 +9,25 @@ namespace TruckLib.HashFs.Dds
 {
     internal static class DdsUtils
     {
-        public static byte[] ConvertDecompBytesToDdsBytes(EntryV2 entry, DdsFile dds, byte[] decomp)
+        public static byte[] ConvertDecompBytesToDdsBytes(PackedTobjDdsMetadata metadata, DdsFile dds, byte[] decomp)
         {
             var subData = Enumerable.Range(0, 32).Select(x => new SubresourceData()).ToArray();
             var initData = FillInitData(dds, decomp, subData);
 
-            var ddsDataLength = CalculateDdsDataLength(entry, subData);
+            var ddsDataLength = CalculateDdsDataLength(metadata, subData);
             var dst = new byte[ddsDataLength];
 
             var srcOffset = 0;
             var dstOffset = 0;
-            for (int currentFaceIdx = 0; currentFaceIdx < entry.TobjMetadata.Value.FaceCount; currentFaceIdx++)
+            for (int currentFaceIdx = 0; currentFaceIdx < metadata.FaceCount; currentFaceIdx++)
             {
                 for (int mipmapIdx = 0; mipmapIdx < dds.Header.MipMapCount; mipmapIdx++)
                 {
-                    srcOffset = NearestMultiple(srcOffset, entry.TobjMetadata.Value.ImageAlignment);
+                    srcOffset = NearestMultiple(srcOffset, metadata.ImageAlignment);
                     var s = subData[mipmapIdx];
                     for (int doneBytes = 0; doneBytes < s.SlicePitch; doneBytes += s.RowPitch)
                     {
-                        srcOffset = NearestMultiple(srcOffset, entry.TobjMetadata.Value.PitchAlignment);
+                        srcOffset = NearestMultiple(srcOffset, metadata.PitchAlignment);
                         Array.Copy(decomp, srcOffset, dst, dstOffset, s.RowPitch);
                         srcOffset += s.RowPitch;
                         dstOffset += s.RowPitch;
@@ -38,12 +38,12 @@ namespace TruckLib.HashFs.Dds
             return dst;
         }
 
-        public static int CalculateDdsDataLength(EntryV2 entry, SubresourceData[] subData)
+        public static int CalculateDdsDataLength(PackedTobjDdsMetadata metadata, SubresourceData[] subData)
         {
             int length = 0;
             for (int i = 0; i < subData.Length; i++)
             {
-                var faceCount = (int)entry.TobjMetadata.Value.FaceCount;
+                var faceCount = (int)metadata.FaceCount;
                 var rowPitch = subData[i].RowPitch;
                 var slicePitch = subData[i].SlicePitch;
                 if (rowPitch == 0) continue;

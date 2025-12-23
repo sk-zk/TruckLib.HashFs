@@ -184,7 +184,7 @@ namespace TruckLib.HashFs
             {
                 data = GDeflate.Decompress(data);
             }
-            dds.Data = DdsUtils.ConvertDecompBytesToDdsBytes(entry, dds, data);
+            dds.Data = DdsUtils.ConvertDecompBytesToDdsBytes(entry.TobjMetadata.Value, dds, data);
 
             using var w = new BinaryWriter(stream);
             dds.Serialize(w);
