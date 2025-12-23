@@ -99,7 +99,7 @@ namespace TruckLib.HashFs
 
             if (entry.Size == 0)
             {
-                // create an empty file
+                // Create an empty file
                 File.Create(outputPath).Dispose();
                 return;
             }
@@ -235,6 +235,12 @@ namespace TruckLib.HashFs
                         IsCompressed = meta.IsCompressed,
                         IsDirectory = false,
                     });
+
+                    // If chunk type 6 is used, there are 8 additional bytes
+                    // after the main metadata with unknown purpose.
+                    // They are all 0 almost all of the time.
+                    // (If we ever need to read these in, this is the spot
+                    // where we would do it.)
                 }
                 else if (chunkTypes[0] == MetadataChunkType.Directory)
                 {
@@ -307,15 +313,42 @@ namespace TruckLib.HashFs
 
     internal enum MetadataChunkType
     {
+        /// <summary>
+        /// Primary chunk type for a packed tobj/dds entry.
+        /// </summary>
         Image = 1,
+
+        /// <summary>
+        /// Secondary chunk type used for packed tobj/dds entries.
+        /// </summary>
         Sample = 2,
+
         MipProxy = 3,
+
         InlineDirectory = 4,
+
+        /// <summary>
+        /// Secondary chunk type used for pmg files.
+        /// </summary>
         Unknown6 = 6,
+
+        /// <summary>
+        /// Primary chunk type for a regular file.
+        /// </summary>
         Plain = 128,
+
+        /// <summary>
+        /// Primary chunk type for directory listings.
+        /// </summary>
         Directory = 129,
+
         Mip0 = 130,
+
         Mip1 = 131,
+
+        /// <summary>
+        /// Secondary chunk type used for packed tobj/dds entries.
+        /// </summary>
         MipTail = 132,
     }
 

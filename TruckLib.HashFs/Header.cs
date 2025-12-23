@@ -88,5 +88,21 @@ namespace TruckLib.HashFs
         {
             Version = 2;
         }
+
+        public void Serialize(BinaryWriter w)
+        {
+            w.Write(Magic);
+            w.Write(Version);
+            w.Write(Salt);
+            w.Write(Encoding.ASCII.GetBytes(HashMethod));
+            w.Write(NumEntries);
+            w.Write(EntryTableLength);
+            w.Write(NumMetadataEntries);
+            w.Write(MetadataTableLength);
+            w.Write(EntryTableStart);
+            w.Write(MetadataTableStart);
+            w.Write(SecurityDescriptorOffset);
+            w.Write((byte)Platform);
+        }
     }
 }
