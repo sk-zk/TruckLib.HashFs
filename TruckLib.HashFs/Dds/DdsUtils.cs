@@ -14,7 +14,7 @@ namespace TruckLib.HashFs.Dds
             var subData = Enumerable.Range(0, 32).Select(x => new SubresourceData()).ToArray();
             var initData = FillInitData(dds, decomp, subData);
 
-            var ddsDataLength = CalculateDdsDataLength(metadata, subData);
+            var ddsDataLength = CalculateDdsDataLength(metadata.FaceCount, subData);
             var dst = new byte[ddsDataLength];
 
             var srcOffset = 0;
@@ -38,24 +38,23 @@ namespace TruckLib.HashFs.Dds
             return dst;
         }
 
-        public static int CalculateDdsDataLength(PackedTobjDdsMetadata metadata, SubresourceData[] subData)
+        public static int CalculateDdsDataLength(uint faceCount, SubresourceData[] subData)
         {
             int length = 0;
             for (int i = 0; i < subData.Length; i++)
             {
-                var faceCount = (int)metadata.FaceCount;
                 var rowPitch = subData[i].RowPitch;
                 var slicePitch = subData[i].SlicePitch;
                 if (rowPitch == 0) continue;
-                length += faceCount * (slicePitch / rowPitch) * rowPitch;
+                length += (int)faceCount * (slicePitch / rowPitch) * rowPitch;
             }
             return length;
         }
 
         public static FillInitDataResult FillInitData(DdsFile dds, byte[] data, SubresourceData[] subdata)
         {
-            const int maxsize = 0;
-            var ret = new FillInitDataResult();
+            const int MaxSize = 0;
+            var result = new FillInitDataResult();
 
             var srcBitsIdx = 0;
             var endBitsIdx = data.Length;
@@ -68,38 +67,38 @@ namespace TruckLib.HashFs.Dds
                 var depth = (int)dds.Header.Depth;
                 for (int i = 0; i < dds.Header.MipMapCount; i++)
                 {
-                    var s = GetSurfaceInfo(width, height, dds.HeaderDxt10.Format);
+                    var surface = GetSurfaceInfo(width, height, dds.HeaderDxt10.Format);
                     if ((dds.Header.MipMapCount <= 1) 
-                        || maxsize == 0 
-                        || (width <= maxsize && height <= maxsize && depth <= maxsize))
+                        || MaxSize == 0 
+                        || (width <= MaxSize && height <= MaxSize && depth <= MaxSize))
                     {
-                        if (ret.TWidth == 0)
+                        if (result.TWidth == 0)
                         {
-                            ret.TWidth = width;
-                            ret.THeight = height;
-                            ret.TDepth = depth;
+                            result.TWidth = width;
+                            result.THeight = height;
+                            result.TDepth = depth;
                         }
                         subdata[index].DataIdx = srcBitsIdx;
-                        subdata[index].RowPitch = s.RowBytes;
-                        subdata[index].SlicePitch = s.NumBytes;
+                        subdata[index].RowPitch = surface.RowBytes;
+                        subdata[index].SlicePitch = surface.NumBytes;
                         index++;
                     }
                     else if (j != 0)
                     {
                         // Count number of skipped mipmaps (first item only)
-                        ret.SkipMip++;
+                        result.SkippedMipMaps++;
                     }
 
-                    if (srcBitsIdx + (s.NumBytes * depth) > endBitsIdx)
+                    if (srcBitsIdx + (surface.NumBytes * depth) > endBitsIdx)
                     {
                         throw new EndOfStreamException();
                     }
 
-                    srcBitsIdx += s.NumBytes * depth;
+                    srcBitsIdx += surface.NumBytes * depth;
 
-                    width >>= 1;
-                    height >>= 1;
-                    depth >>= 1;
+                    width /= 2;
+                    height /= 2;
+                    depth /= 2;
                     if (width == 0)
                     {
                         width = 1;
@@ -115,12 +114,12 @@ namespace TruckLib.HashFs.Dds
                 }
             }
 
-            return ret;
+            return result;
         }
 
         public static SurfaceInfo GetSurfaceInfo(int width, int height, DxgiFormat format)
         {
-            var ret = new SurfaceInfo();
+            var info = new SurfaceInfo();
 
             var bc = false;
             var packed = false;
@@ -195,38 +194,38 @@ namespace TruckLib.HashFs.Dds
                 {
                     numBlocksHigh = Math.Max(1, (height + 3) / 4);
                 }
-                ret.RowBytes = numBlocksWide * bpe;
-                ret.NumRows = numBlocksHigh;
-                ret.NumBytes = ret.RowBytes * numBlocksHigh;
+                info.RowBytes = numBlocksWide * bpe;
+                info.NumRows = numBlocksHigh;
+                info.NumBytes = info.RowBytes * numBlocksHigh;
             }
             else if (packed)
             {
-                ret.RowBytes = ((width + 1) >> 1) * bpe;
-                ret.NumRows = height;
-                ret.NumBytes = ret.RowBytes * height;
+                info.RowBytes = ((width + 1) >> 1) * bpe;
+                info.NumRows = height;
+                info.NumBytes = info.RowBytes * height;
             }
             else if (format == DxgiFormat.NV11)
             {
-                ret.RowBytes = ((width + 3) >> 2) * 4;
+                info.RowBytes = ((width + 3) >> 2) * 4;
                 // Direct3D makes this simplifying assumption, although it is larger than the 4:1:1 data
-                ret.NumRows = height * 2; 
-                ret.NumBytes = ret.RowBytes * ret.NumRows;
+                info.NumRows = height * 2; 
+                info.NumBytes = info.RowBytes * info.NumRows;
             }
             else if (planar)
             {
-                ret.RowBytes = ((width + 1) >> 1) * bpe;
-                ret.NumBytes = (ret.RowBytes * height) + ((ret.RowBytes * height + 1) >> 1);
-                ret.NumRows = height + ((height + 1) >> 1);
+                info.RowBytes = ((width + 1) >> 1) * bpe;
+                info.NumBytes = (info.RowBytes * height) + ((info.RowBytes * height + 1) >> 1);
+                info.NumRows = height + ((height + 1) >> 1);
             }
             else
             {
                 int bpp = BitsPerPixel(format);
-                ret.RowBytes = (width * bpp + 7) / 8; // round up to nearest byte
-                ret.NumRows = height;
-                ret.NumBytes = ret.RowBytes * height;
+                info.RowBytes = (width * bpp + 7) / 8; // round up to nearest byte
+                info.NumRows = height;
+                info.NumBytes = info.RowBytes * height;
             }
 
-            return ret;
+            return info;
         }
 
         public static int BitsPerPixel(DxgiFormat format)
@@ -382,12 +381,10 @@ namespace TruckLib.HashFs.Dds
         /// <param name="n">The multiple to round to.</param>
         /// <returns>The smallest multiple of <paramref name="n"/> that is greater
         /// than or equal to <paramref name="x"/>.</returns>
-        public static int NearestMultiple(int x, int n)
-        {
-            return n == 0
-                ? x
+        public static int NearestMultiple(int x, int n) => 
+            n == 0 
+                ? x 
                 : (x + n - 1) / n * n;
-        }
     }
 
     internal struct FillInitDataResult
@@ -395,7 +392,7 @@ namespace TruckLib.HashFs.Dds
         public int TWidth;
         public int THeight;
         public int TDepth;
-        public int SkipMip;
+        public int SkippedMipMaps;
     }
 
     internal struct SurfaceInfo

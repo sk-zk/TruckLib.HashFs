@@ -7,7 +7,7 @@ namespace TruckLib.HashFs.Dds
     /// legacy Microsoft DirectDraw pixel format structures, and additional metadata.</para>
     /// <para>This header is present if the FourCC member of the DdsPixelFormat structure is set to "DX10".</para>
     /// </summary>
-    internal class DdsHeaderDxt10
+    internal class DdsHeaderDxt10 : IBinarySerializable
     {
         /// <summary>
         /// The surface pixel format (see 
@@ -41,7 +41,7 @@ namespace TruckLib.HashFs.Dds
         /// </summary>
         public uint MiscFlags2 { get; set; }
 
-        public void Deserialize(BinaryReader r)
+        public void Deserialize(BinaryReader r, uint? version = null)
         {
             Format = (DxgiFormat)r.ReadUInt32();
             ResourceDimension = (D3d10ResourceDimension)r.ReadUInt32();

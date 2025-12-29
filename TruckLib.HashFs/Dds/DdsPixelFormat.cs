@@ -7,7 +7,7 @@ namespace TruckLib.HashFs.Dds
     /// <summary>
     /// Describes the surface pixel format of a DDS file.
     /// </summary>
-    internal class DdsPixelFormat
+    internal class DdsPixelFormat : IBinarySerializable
     {
         private const int StructSize = 32;
 
@@ -118,7 +118,7 @@ namespace TruckLib.HashFs.Dds
         /// </summary>
         public uint ABitMask { get; set; }
 
-        public void Deserialize(BinaryReader r)
+        public void Deserialize(BinaryReader r, uint? version = null)
         {
             var size = r.ReadUInt32();
             if (size != StructSize)

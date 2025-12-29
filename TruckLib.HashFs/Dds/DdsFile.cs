@@ -8,7 +8,7 @@ namespace TruckLib.HashFs.Dds
     /// Represents a DDS file.
     /// Only the header is properly de/serialized; the rest of the file is just a binary blob.
     /// </summary>
-    internal class DdsFile
+    internal class DdsFile : IBinarySerializable
     {
         private const int Magic = 0x20534444; // "DDS "
 
@@ -41,7 +41,7 @@ namespace TruckLib.HashFs.Dds
             return dds;
         }
 
-        public void Deserialize(BinaryReader r)
+        public void Deserialize(BinaryReader r, uint? version = null)
         {
             var magic = r.ReadInt32();
             if (magic != Magic) 

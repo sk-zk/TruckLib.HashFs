@@ -5,7 +5,7 @@ namespace TruckLib.HashFs.Dds
     /// <summary>
     /// Reperesents the header of a DDS file.
     /// </summary>
-    internal class DdsHeader
+    internal class DdsHeader : IBinarySerializable
     {
         private const int StructSize = 124;
 
@@ -235,7 +235,7 @@ namespace TruckLib.HashFs.Dds
         }
 
 
-        public void Deserialize(BinaryReader r)
+        public void Deserialize(BinaryReader r, uint? version = null)
         {
             var size = r.ReadUInt32();
             if (size != StructSize)
