@@ -11,8 +11,7 @@ namespace TruckLib.HashFs.Dds
     {
         public static byte[] ConvertDecompBytesToDdsBytes(PackedTobjDdsMetadata metadata, DdsFile dds, byte[] decomp)
         {
-            var subData = Enumerable.Range(0, 32).Select(x => new SubresourceData()).ToArray();
-            var initData = FillInitData(dds, decomp, subData);
+            var subData = GenerateSubResourceData(dds, decomp.Length);
 
             var ddsDataLength = CalculateDdsDataLength(metadata.FaceCount, subData);
             var dst = new byte[ddsDataLength];
@@ -38,28 +37,28 @@ namespace TruckLib.HashFs.Dds
             return dst;
         }
 
-        public static int CalculateDdsDataLength(uint faceCount, SubresourceData[] subData)
+        public static int CalculateDdsDataLength(uint faceCount, List<SubresourceData> subData)
         {
             int length = 0;
-            for (int i = 0; i < subData.Length; i++)
+            for (int i = 0; i < subData.Count; i++)
             {
                 var rowPitch = subData[i].RowPitch;
                 var slicePitch = subData[i].SlicePitch;
-                if (rowPitch == 0) continue;
                 length += (int)faceCount * (slicePitch / rowPitch) * rowPitch;
             }
             return length;
         }
 
-        public static FillInitDataResult FillInitData(DdsFile dds, byte[] data, SubresourceData[] subdata)
+        public static List<SubresourceData> GenerateSubResourceData(DdsFile dds, int numTotalBytes)
         {
+            var subData = new List<SubresourceData>(16);
+            var skippedMipmaps = 0;
+
             const int MaxSize = 0;
-            var result = new FillInitDataResult();
 
             var srcBitsIdx = 0;
-            var endBitsIdx = data.Length;
+            var endBitsIdx = numTotalBytes;
 
-            var index = 0;
             for (int j = 0; j < dds.HeaderDxt10.ArraySize; j++)
             {
                 var width = (int)dds.Header.Width;
@@ -72,21 +71,17 @@ namespace TruckLib.HashFs.Dds
                         || MaxSize == 0 
                         || (width <= MaxSize && height <= MaxSize && depth <= MaxSize))
                     {
-                        if (result.TWidth == 0)
+                        subData.Add(new SubresourceData()
                         {
-                            result.TWidth = width;
-                            result.THeight = height;
-                            result.TDepth = depth;
-                        }
-                        subdata[index].DataIdx = srcBitsIdx;
-                        subdata[index].RowPitch = surface.RowBytes;
-                        subdata[index].SlicePitch = surface.NumBytes;
-                        index++;
+                            DataIdx = srcBitsIdx,
+                            RowPitch = surface.RowBytes,
+                            SlicePitch = surface.NumBytes,
+                        });
                     }
                     else if (j != 0)
                     {
                         // Count number of skipped mipmaps (first item only)
-                        result.SkippedMipMaps++;
+                        skippedMipmaps++;
                     }
 
                     if (srcBitsIdx + (surface.NumBytes * depth) > endBitsIdx)
@@ -114,7 +109,7 @@ namespace TruckLib.HashFs.Dds
                 }
             }
 
-            return result;
+            return subData;
         }
 
         public static SurfaceInfo GetSurfaceInfo(int width, int height, DxgiFormat format)
@@ -385,14 +380,6 @@ namespace TruckLib.HashFs.Dds
             n == 0 
                 ? x 
                 : (x + n - 1) / n * n;
-    }
-
-    internal struct FillInitDataResult
-    {
-        public int TWidth;
-        public int THeight;
-        public int TDepth;
-        public int SkippedMipMaps;
     }
 
     internal struct SurfaceInfo
