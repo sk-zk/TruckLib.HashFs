@@ -60,7 +60,7 @@ namespace TruckLib.HashFs
 
             // Write the header
             var nonDdsCount = files.Count(x => 
-                x.Key.EndsWith(".dds", StringComparison.OrdinalIgnoreCase));
+                !x.Key.EndsWith(".dds", StringComparison.OrdinalIgnoreCase));
             stream.Position = 0;
             var header = new HeaderV2()
             {
