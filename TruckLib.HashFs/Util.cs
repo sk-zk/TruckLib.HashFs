@@ -27,5 +27,29 @@ namespace TruckLib.HashFs
             var hash = CityHash.CityHash64(bytes, (ulong)bytes.Length);
             return hash;
         }
+
+        /// <summary>
+        /// Rounds up <paramref name="x"/> to the nearest multiple of <paramref name="n"/>.
+        /// </summary>
+        /// <param name="x">The number to round.</param>
+        /// <param name="n">The multiple to round to.</param>
+        /// <returns>The smallest multiple of <paramref name="n"/> that is greater
+        /// than or equal to <paramref name="x"/>.</returns>
+        public static int NearestMultiple(int x, int n) => 
+            n == 0 
+                ? x 
+                : (x + n - 1) / n * n;
+
+        /// <summary>
+        /// Rounds up <paramref name="x"/> to the nearest multiple of <paramref name="n"/>.
+        /// </summary>
+        /// <param name="x">The number to round.</param>
+        /// <param name="n">The multiple to round to.</param>
+        /// <returns>The smallest multiple of <paramref name="n"/> that is greater
+        /// than or equal to <paramref name="x"/>.</returns>
+        public static long NearestMultiple(long x, long n) =>
+            n == 0L
+                ? x
+                : (x + n - 1L) / n * n;
     }
 }

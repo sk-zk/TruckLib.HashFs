@@ -8,6 +8,8 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using TruckLib.HashFs.Dds;
+using TruckLib.HashFs.HashFsV2;
+using static TruckLib.HashFs.HashFsV2.Consts;
 
 namespace TruckLib.HashFs
 {
@@ -27,12 +29,6 @@ namespace TruckLib.HashFs
         }
 
         public Platform Platform => Header.Platform;
-
-        /// <summary>
-        /// The character used in directory listing files to indicate that
-        /// an element is a directory rather than a file.
-        /// </summary>
-        internal const char DirMarker = '/';
 
         /// <inheritdoc/>
         public override DirectoryListing GetDirectoryListing(
@@ -142,8 +138,8 @@ namespace TruckLib.HashFs
                 IsWidthValid = true,
                 IsPixelFormatValid = true,
                 CapsTexture = true,
-                Width = (uint)entry.TobjMetadata.Value.TextureWidth,
-                Height = (uint)entry.TobjMetadata.Value.TextureHeight,
+                Width = entry.TobjMetadata.Value.TextureWidth,
+                Height = entry.TobjMetadata.Value.TextureHeight,
                 IsMipMapCountValid = entry.TobjMetadata.Value.MipmapCount > 0,
                 MipMapCount = entry.TobjMetadata.Value.MipmapCount,
             };
@@ -184,7 +180,7 @@ namespace TruckLib.HashFs
             {
                 data = GDeflate.Decompress(data);
             }
-            dds.Data = DdsUtils.ConvertDecompBytesToDdsBytes(entry.TobjMetadata.Value, dds, data);
+            dds.Data = DdsUtils.UnconvertDdsSurfaceData(entry.TobjMetadata.Value, dds, data);
 
             using var w = new BinaryWriter(stream);
             dds.Serialize(w);
@@ -195,8 +191,6 @@ namespace TruckLib.HashFs
             var entryTable = ReadEntryTable();
             ReadMetadataTableAndCreateEntries(entryTable);
         }
-
-        internal const ulong BlockSize = 16UL;
 
         private void ReadMetadataTableAndCreateEntries(Span<EntryTableEntry> entryTable)
         {
@@ -209,12 +203,11 @@ namespace TruckLib.HashFs
 
             foreach (var entry in entryTable)
             {
-                mr.BaseStream.Position = entry.MetadataIndex * 4;
+                mr.BaseStream.Position = entry.MetadataIndex * MetadataTableBlockSize;
 
                 var chunkTypes = new MetadataChunkType[entry.MetadataCount];
                 for (int i = 0; i < entry.MetadataCount; i++)
                 {
-                    var pos = mr.BaseStream.Position;
                     var indexBytes = mr.ReadBytes(3);
                     var index = indexBytes[0] + (indexBytes[1] << 8) + (indexBytes[2] << 16);
                     var chunkType = (MetadataChunkType)mr.ReadByte();
@@ -258,13 +251,9 @@ namespace TruckLib.HashFs
                 }
                 else if (chunkTypes[0] == MetadataChunkType.Image)
                 {
-                    var tobjMeta = new PackedTobjDdsMetadata
-                    {
-                        TextureWidth = mr.ReadUInt16() + 1,
-                        TextureHeight = mr.ReadUInt16() + 1,
-                        ImgFlags = new FlagField(mr.ReadUInt32()),
-                        SampleFlags = new FlagField(mr.ReadUInt32())
-                    };
+                    var tobjMeta = new PackedTobjDdsMetadata();
+                    tobjMeta.Deserialize(mr);
+
                     meta.Deserialize(mr);
 
                     Entries.Add(entry.Hash, new EntryV2()
@@ -280,7 +269,7 @@ namespace TruckLib.HashFs
                 }
                 else
                 {
-                    throw new NotImplementedException($"Unhandled metadata type {chunkTypes[0]}");
+                    throw new NotImplementedException($"Unhandled chunk type {chunkTypes[0]}");
                 }
             }
         }
@@ -292,111 +281,6 @@ namespace TruckLib.HashFs
             var entryTable = MemoryMarshal.Cast<byte, EntryTableEntry>(entryTableBuffer.AsSpan());
             entryTable.Sort((x, y) => (int)(x.MetadataIndex - y.MetadataIndex));
             return entryTable;
-        }
-    }
-
-    [StructLayout(LayoutKind.Explicit)]
-    internal struct EntryTableEntry
-    {
-        [FieldOffset(0)]
-        public ulong Hash;
-
-        [FieldOffset(8)]
-        public uint MetadataIndex;
-
-        [FieldOffset(12)]
-        public ushort MetadataCount;
-
-        [FieldOffset(14)]
-        public ushort Flags;
-    }
-
-    internal enum MetadataChunkType
-    {
-        /// <summary>
-        /// Primary chunk type for a packed tobj/dds entry.
-        /// </summary>
-        Image = 1,
-
-        /// <summary>
-        /// Secondary chunk type used for packed tobj/dds entries.
-        /// </summary>
-        Sample = 2,
-
-        MipProxy = 3,
-
-        InlineDirectory = 4,
-
-        /// <summary>
-        /// Secondary chunk type used for pmg files.
-        /// </summary>
-        Unknown6 = 6,
-
-        /// <summary>
-        /// Primary chunk type for a regular file.
-        /// </summary>
-        Plain = 128,
-
-        /// <summary>
-        /// Primary chunk type for directory listings.
-        /// </summary>
-        Directory = 129,
-
-        Mip0 = 130,
-
-        Mip1 = 131,
-
-        /// <summary>
-        /// Secondary chunk type used for packed tobj/dds entries.
-        /// </summary>
-        MipTail = 132,
-    }
-
-    internal struct MainMetadata : IBinarySerializable
-    {
-        public uint CompressedSize;
-
-        public uint Size;
-
-        public uint Unknown;
-
-        public uint OffsetBlock;
-
-        public readonly ulong Offset => OffsetBlock * HashFsV2Reader.BlockSize;
-
-        private FlagField flags;
-
-        public bool IsCompressed 
-        {
-            get => flags[4];
-            set => flags[4] = value;
-        } 
-
-        public void Deserialize(BinaryReader r, uint? version = null)
-        {
-            var compressedSizeBytes = r.ReadBytes(3);
-            var compressedSizeMsbAndCompressedFlag = r.ReadByte();
-            CompressedSize = (uint)(
-                compressedSizeBytes[0]
-                + (compressedSizeBytes[1] << 8)
-                + (compressedSizeBytes[2] << 16)
-                + ((compressedSizeMsbAndCompressedFlag & 0x0F) << 24)
-                );
-            flags = new FlagField(compressedSizeMsbAndCompressedFlag & 0xF0u);
-            Size = r.ReadUInt32();
-            Unknown = r.ReadUInt32();
-            OffsetBlock = r.ReadUInt32();
-        }
-
-        public void Serialize(BinaryWriter w)
-        {
-            w.Write((byte)CompressedSize);
-            w.Write((byte)(CompressedSize >> 8));
-            w.Write((byte)(CompressedSize >> 16));
-            w.Write((byte)((byte)(CompressedSize >> 24 & 0x0F) | (flags.Bits & 0xF0)));
-            w.Write(Size);
-            w.Write(Unknown);
-            w.Write(OffsetBlock);
         }
     }
 }

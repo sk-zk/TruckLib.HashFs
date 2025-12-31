@@ -1,17 +1,64 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TruckLib.HashFs.HashFsV2;
+using static TruckLib.HashFs.Util;
 
 namespace TruckLib.HashFs.Dds
 {
     internal static class DdsUtils
     {
-        public static byte[] ConvertDecompBytesToDdsBytes(PackedTobjDdsMetadata metadata, DdsFile dds, byte[] decomp)
+        /// <summary>
+        /// Realigns the surface data bytes of a DDS file to the format 
+        /// with which it is stored in a HashFS v2 archive.
+        /// </summary>
+        /// <param name="dds">The DDS file to convert.</param>
+        /// <returns>The realigned surface data.</returns>
+        public static byte[] ConvertSurfaceData(DdsFile dds)
         {
-            var subData = GenerateSubResourceData(dds, decomp.Length);
+            var faceCount = 1;
+            var imageAlignment = 512;
+            var pitchAlignment = 256;
+            var subData = GenerateSubResourceData(dds, dds.Data.Length);
+            var bufferSize = CalculateDdsHashFsLength((uint)faceCount, dds.Header.MipMapCount, subData);
+            var buffer = new byte[bufferSize];
+
+            var dstOffset = 0;
+            var srcOffset = 0;
+            for (int currentFaceIdx = 0; currentFaceIdx < faceCount; currentFaceIdx++)
+            {
+                for (int mipmapIdx = 0; mipmapIdx < dds.Header.MipMapCount; mipmapIdx++)
+                {
+                    dstOffset = NearestMultiple(dstOffset, imageAlignment);
+                    var s = subData[mipmapIdx];
+                    for (int doneBytes = 0; doneBytes < s.SlicePitch; doneBytes += s.RowPitch)
+                    {
+                        dstOffset = NearestMultiple(dstOffset, pitchAlignment);
+                        Array.Copy(dds.Data, srcOffset, buffer, dstOffset, s.RowPitch);
+                        dstOffset += s.RowPitch;
+                        srcOffset += s.RowPitch;
+                    }
+                }
+            }
+
+            return buffer;
+        }
+
+        /// <summary>
+        /// Realigns the surface data bytes from the HashFS format
+        /// back into the format used in a DDS file.
+        /// </summary>
+        /// <param name="metadata">The tobj/dds metadata from the metadata table entry of the texture.</param>
+        /// <param name="dds">The DDS file.</param>
+        /// <param name="surfaceData">The surface data.</param>
+        /// <returns>The realigned surface data.</returns>
+        public static byte[] UnconvertDdsSurfaceData(PackedTobjDdsMetadata metadata, DdsFile dds, byte[] surfaceData)
+        {
+            var subData = GenerateSubResourceData(dds, surfaceData.Length);
 
             var ddsDataLength = CalculateDdsDataLength(metadata.FaceCount, subData);
             var dst = new byte[ddsDataLength];
@@ -27,7 +74,7 @@ namespace TruckLib.HashFs.Dds
                     for (int doneBytes = 0; doneBytes < s.SlicePitch; doneBytes += s.RowPitch)
                     {
                         srcOffset = NearestMultiple(srcOffset, metadata.PitchAlignment);
-                        Array.Copy(decomp, srcOffset, dst, dstOffset, s.RowPitch);
+                        Array.Copy(surfaceData, srcOffset, dst, dstOffset, s.RowPitch);
                         srcOffset += s.RowPitch;
                         dstOffset += s.RowPitch;
                     }
@@ -44,9 +91,33 @@ namespace TruckLib.HashFs.Dds
             {
                 var rowPitch = subData[i].RowPitch;
                 var slicePitch = subData[i].SlicePitch;
-                length += (int)faceCount * (slicePitch / rowPitch) * rowPitch;
+                var sectionLength = (int)faceCount * (slicePitch / rowPitch) * rowPitch;
+                length += sectionLength;
             }
             return length;
+        }
+
+        public static int CalculateDdsHashFsLength(uint faceCount, uint mipmapCount, List<SubresourceData> subData)
+        {
+            var imageAlignment = 512;
+            var pitchAlignment = 256;
+
+            // TODO refactor this
+            var dstOffset = 0;
+            for (int currentFaceIdx = 0; currentFaceIdx < faceCount; currentFaceIdx++)
+            {
+                for (int mipmapIdx = 0; mipmapIdx < mipmapCount; mipmapIdx++)
+                {
+                    dstOffset = NearestMultiple(dstOffset, imageAlignment);
+                    var s = subData[mipmapIdx];
+                    for (int doneBytes = 0; doneBytes < s.SlicePitch; doneBytes += s.RowPitch)
+                    {
+                        dstOffset = NearestMultiple(dstOffset, pitchAlignment);
+                        dstOffset += s.RowPitch;
+                    }
+                }
+            }
+            return dstOffset;
         }
 
         public static List<SubresourceData> GenerateSubResourceData(DdsFile dds, int numTotalBytes)
@@ -91,21 +162,9 @@ namespace TruckLib.HashFs.Dds
 
                     srcBitsIdx += surface.NumBytes * depth;
 
-                    width /= 2;
-                    height /= 2;
-                    depth /= 2;
-                    if (width == 0)
-                    {
-                        width = 1;
-                    }
-                    if (height == 0)
-                    {
-                        height = 1;
-                    }
-                    if (depth == 0)
-                    {
-                        depth = 1;
-                    }
+                    width = Math.Max(width / 2, 1);
+                    height = Math.Max(height / 2, 1);
+                    depth = Math.Max(depth / 2, 1);
                 }
             }
 
@@ -368,18 +427,6 @@ namespace TruckLib.HashFs.Dds
                     return 0;
             }
         }
-
-        /// <summary>
-        /// Rounds up <paramref name="x"/> to the nearest multiple of <paramref name="n"/>.
-        /// </summary>
-        /// <param name="x">The number to round.</param>
-        /// <param name="n">The multiple to round to.</param>
-        /// <returns>The smallest multiple of <paramref name="n"/> that is greater
-        /// than or equal to <paramref name="x"/>.</returns>
-        public static int NearestMultiple(int x, int n) => 
-            n == 0 
-                ? x 
-                : (x + n - 1) / n * n;
     }
 
     internal struct SurfaceInfo

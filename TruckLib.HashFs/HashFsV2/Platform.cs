@@ -1,4 +1,4 @@
-﻿namespace TruckLib.HashFs
+﻿namespace TruckLib.HashFs.HashFsV2
 {
     public enum Platform
     {

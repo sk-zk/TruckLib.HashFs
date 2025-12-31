@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO.Hashing;
+using TruckLib.HashFs.HashFsV2;
 
 namespace TruckLib.HashFs.Tests
 {

@@ -6,6 +6,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using TruckLib.HashFs.Dds;
+using TruckLib.Models;
+using static TruckLib.HashFs.Util;
+using TruckLib.HashFs.HashFsV2;
+using static TruckLib.HashFs.HashFsV2.Consts;
 
 namespace TruckLib.HashFs
 {    
@@ -31,7 +36,7 @@ namespace TruckLib.HashFs
 
             // Write the files, generate the metadata table stream,
             // and generate the entry table entries
-            var (entries, metaStream) = WriteFiles(files.Concat(dirLists), stream);
+            var (entries, metaStream) = WriteFiles(files.Concat(dirLists).ToDictionary(), stream);
 
             // Write the entry table
             var entryTableStart = stream.Position;
@@ -72,7 +77,7 @@ namespace TruckLib.HashFs
         }
 
         private (List<EntryTableEntry> Entries, MemoryStream MetaStream) WriteFiles(
-            IEnumerable<KeyValuePair<string, IFile>> files, Stream outStream)
+            Dictionary<string, IFile> files, Stream outStream)
         {
             const int fileStartOffset = 4096;
             outStream.Position = fileStartOffset;
@@ -84,58 +89,19 @@ namespace TruckLib.HashFs
 
             foreach (var (path, file) in files)
             {
-                // Write the file
-                var startPos = outStream.Position;
+                var extension = Path.GetExtension(path).ToLowerInvariant();
+                if (extension == ".dds")
+                    continue;
 
-                var fileStream = file.Open();
-
-                var compress = CompressionLevel != CompressionLevel.NoCompression
-                    && fileStream.Length > CompressionThreshold;
-                if (compress)
+                EntryTableEntry entry;
+                if (extension == ".tobj")
                 {
-                    CompressZlib(fileStream, outStream, CompressionLevel);
+                    entry = WriteTobjDdsEntry(file, files, outStream, metaWriter, path);
                 }
                 else
                 {
-                    fileStream.CopyTo(outStream);
+                    entry = WriteRegularEntry(file, outStream, metaWriter, path);
                 }
-
-                var endPos = outStream.Position;
-                var uncompressedSize = (uint)fileStream.Length;
-                var compressedSize = (uint)(endPos - startPos);
-
-                fileStream.Dispose();
-
-                // Write the metadata table entry
-                var metaOffset = metaStream.Position;
-
-                var extension = Path.GetExtension(path).ToLowerInvariant();
-                var numChunks = WriteMetadataChunks(metaWriter, metaOffset, file, extension);
-
-                var meta = new MainMetadata()
-                {
-                    CompressedSize = compressedSize,
-                    Size = uncompressedSize,
-                    IsCompressed = compress,
-                    OffsetBlock = (uint)((ulong)startPos / HashFsV2Reader.BlockSize),
-                };
-                meta.IsCompressed = compress;
-                meta.Serialize(metaWriter);
-
-                if (extension == ".pmg")
-                {
-                    // 8 extra bytes with unknown purpose for chunk type 6
-                    metaWriter.Write(0UL);
-                }
-
-                // Create the entry table entry
-                var entry = new EntryTableEntry()
-                {
-                    Hash = Util.HashPath(path, Salt),
-                    MetadataIndex = (uint)(metaOffset / 4),
-                    MetadataCount = numChunks,
-                    Flags = (ushort)(file.IsDirectory ? 1 : 0),
-                };
                 entries.Add(entry);
 
                 // File offsets must be multiples of 16
@@ -145,13 +111,143 @@ namespace TruckLib.HashFs
             return (entries, metaStream);
         }
 
-        private static ushort WriteMetadataChunks(BinaryWriter w, long metaOffset, IFile file, string extension)
+        private EntryTableEntry WriteTobjDdsEntry(IFile file, Dictionary<string, IFile> files, Stream outStream,
+            BinaryWriter metaWriter, string path)
+        {
+            var startPos = outStream.Position;
+
+            // Open the tobj and dds files
+            var tobj = LoadTobjFromFileStream(file);
+
+            if (!files.TryGetValue(tobj.TexturePath, out var ddsEntry))
+            {
+                throw new FileNotFoundException();
+            }
+            var dds = DdsFile.Load(ddsEntry.Open());
+
+            // Realign dds bytes
+            var buffer = DdsUtils.ConvertSurfaceData(dds);
+
+            // Write the dds bytes
+            // TODO GDeflate compression
+            var compress = false;
+            outStream.Write(buffer);
+
+            var endPos = outStream.Position;
+            var uncompressedSize = (uint)buffer.Length;
+            var compressedSize = (uint)(endPos - startPos);
+
+            // Write the metadata table entry
+            var metaOffset = metaWriter.BaseStream.Position;
+
+            var extension = Path.GetExtension(path).ToLowerInvariant();
+            var numChunks = WriteMetadataChunkTypes(metaWriter, metaOffset, file, extension);
+
+            var tobjMeta = PackedTobjDdsMetadata.FromTobj(tobj, dds);
+            tobjMeta.Serialize(metaWriter);
+
+            var meta = new MainMetadata()
+            {
+                CompressedSize = compressedSize,
+                Size = uncompressedSize,
+                IsCompressed = compress,
+                OffsetBlock = (uint)((ulong)startPos / BlockSize),
+            };
+            meta.IsCompressed = compress;
+            meta.Flags2.Bits = 48; // don't know what this does
+            meta.Serialize(metaWriter);
+
+            // Create the entry table entry
+            var entry = new EntryTableEntry()
+            {
+                Hash = HashPath(path, Salt),
+                MetadataIndex = (uint)(metaOffset / MetadataTableBlockSize),
+                MetadataCount = numChunks,
+                Flags = (ushort)(file.IsDirectory ? 1 : 0),
+            };
+            return entry;
+        }
+
+        private static Tobj LoadTobjFromFileStream(IFile file)
+        {
+            var tobjStream = file.Open();
+            using var tobjBr = new BinaryReader(tobjStream);
+            var tobj = new Tobj();
+            tobj.Deserialize(tobjBr);
+            return tobj;
+        }
+
+        private EntryTableEntry WriteRegularEntry(IFile file, Stream outStream, BinaryWriter metaWriter, string path)
+        {
+            var startPos = outStream.Position;
+
+            // Write the file
+            var fileStream = file.Open();
+
+            var compress = CompressionLevel != CompressionLevel.NoCompression
+                && fileStream.Length > CompressionThreshold;
+            if (compress)
+            {
+                CompressZlib(fileStream, outStream, CompressionLevel);
+            }
+            else
+            {
+                fileStream.CopyTo(outStream);
+            }
+
+            var endPos = outStream.Position;
+            var uncompressedSize = (uint)fileStream.Length;
+            var compressedSize = (uint)(endPos - startPos);
+
+            fileStream.Dispose();
+
+            // Write the metadata table entry
+            var metaOffset = metaWriter.BaseStream.Position;
+
+            var extension = Path.GetExtension(path).ToLowerInvariant();
+            var numChunks = WriteMetadataChunkTypes(metaWriter, metaOffset, file, extension);
+
+            var meta = new MainMetadata()
+            {
+                CompressedSize = compressedSize,
+                Size = uncompressedSize,
+                IsCompressed = compress,
+                OffsetBlock = (uint)((ulong)startPos / BlockSize),
+            };
+            meta.IsCompressed = compress;
+            meta.Serialize(metaWriter);
+
+            if (extension == ".pmg")
+            {
+                // 8 extra bytes with unknown purpose for chunk type 6
+                metaWriter.Write(0UL);
+            }
+
+            // Create the entry table entry
+            var entry = new EntryTableEntry()
+            {
+                Hash = HashPath(path, Salt),
+                MetadataIndex = (uint)(metaOffset / MetadataTableBlockSize),
+                MetadataCount = numChunks,
+                Flags = (ushort)(file.IsDirectory ? 1 : 0),
+            };
+
+            return entry;
+        }
+
+        private static ushort WriteMetadataChunkTypes(BinaryWriter w, long metaOffset, IFile file, string extension)
         {
             List<MetadataChunkType> chunks = new(1);
 
             if (file.IsDirectory)
             {
                 chunks.Add(MetadataChunkType.Directory);
+            }
+            else if (extension == ".tobj")
+            {
+                chunks.Add(MetadataChunkType.Image);
+                chunks.Add(MetadataChunkType.Sample);
+                chunks.Add(MetadataChunkType.MipTail);
             }
             else
             {
@@ -164,14 +260,28 @@ namespace TruckLib.HashFs
                 }
             }
 
-            var metaIndex = (metaOffset / 4) + chunks.Count;
+            var metaIndex = (metaOffset / MetadataTableBlockSize) + chunks.Count;
             for (int i = 0; i < chunks.Count; i++)
             {
                 w.Write((byte)metaIndex);
                 w.Write((byte)(metaIndex >> 8));
                 w.Write((byte)(metaIndex >> 16));
                 w.Write((byte)chunks[i]);
-                metaIndex += 4;
+
+                if (chunks.Count > 1)
+                {
+                    var chunkLength = chunks[i] switch
+                    {
+                        MetadataChunkType.Plain => 4,
+                        MetadataChunkType.Unknown6 => 2,
+                        MetadataChunkType.Directory => 4,
+                        MetadataChunkType.Image => 2,
+                        MetadataChunkType.Sample => 1,
+                        MetadataChunkType.MipTail => 4,
+                        _ => throw new NotImplementedException(),
+                    };
+                    metaIndex += chunkLength;
+                }
             }
 
             return (ushort)chunks.Count;
@@ -179,9 +289,7 @@ namespace TruckLib.HashFs
 
         private static void AdvanceStreamToNextBlock(Stream stream)
         {
-            var nextPosition = (long)Math.Ceiling(stream.Position / (float)HashFsV2Reader.BlockSize) 
-                * (long)HashFsV2Reader.BlockSize;
-            stream.Position = nextPosition;
+            stream.Position = NearestMultiple(stream.Position, (long)BlockSize);
         }
 
         private static Dictionary<string, IFile> GenerateDirectoryListings(Stream stream, Directory dir,
@@ -196,11 +304,18 @@ namespace TruckLib.HashFs
             List<byte[]> strings = [];
             foreach (var (name, _) in dir.Directories)
             {
-                var utf8Bytes = Encoding.UTF8.GetBytes(HashFsV2Reader.DirMarker + name);
+                var utf8Bytes = Encoding.UTF8.GetBytes(DirMarker + name);
                 strings.Add(utf8Bytes);
             }
             foreach (var file in dir.Files)
             {
+                // Don't add any dds files to the listing - dds files referenced by a tobj
+                // get packed into the tobj entry, and loose dds files are ignored.
+                if (file.EndsWith(".dds", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 var utf8Bytes = Encoding.UTF8.GetBytes(file);
                 strings.Add(utf8Bytes);
             }

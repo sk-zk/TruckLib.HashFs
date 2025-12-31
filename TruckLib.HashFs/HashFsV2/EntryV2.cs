@@ -1,4 +1,4 @@
-﻿namespace TruckLib.HashFs
+﻿namespace TruckLib.HashFs.HashFsV2
 {
     /// <summary>
     /// Represents the metadata of an entry in a HashFS v2 archive.
