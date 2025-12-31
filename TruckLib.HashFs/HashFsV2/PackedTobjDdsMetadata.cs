@@ -138,7 +138,7 @@ namespace TruckLib.HashFs.HashFsV2
             tobjMeta.MipmapCount = dds.Header.MipMapCount;
             tobjMeta.Format = dds.HeaderDxt10.Format;
             tobjMeta.IsCube = tobj.Type == TobjType.CubeMap;
-            tobjMeta.FaceCount = 1;
+            tobjMeta.FaceCount = dds.Header.Caps2Cubemap ? 6u : 1u;
             tobjMeta.PitchAlignment = Consts.PitchAlignment;
             tobjMeta.ImageAlignment = Consts.ImageAlignment;
             tobjMeta.MagFilter = tobj.MagFilter;

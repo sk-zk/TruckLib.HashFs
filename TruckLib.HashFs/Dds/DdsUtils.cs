@@ -21,7 +21,7 @@ namespace TruckLib.HashFs.Dds
         /// <returns>The realigned surface data.</returns>
         public static byte[] ConvertSurfaceData(DdsFile dds)
         {
-            var faceCount = 1;
+            var faceCount = dds.Header.Caps2Cubemap ? 6 : 1;
             var subData = GenerateSubResourceData(dds, dds.Data.Length);
             var bufferSize = CalculateDdsHashFsLength((uint)faceCount, dds.Header.MipMapCount, subData);
             var buffer = new byte[bufferSize];
