@@ -82,7 +82,7 @@ namespace TruckLib.HashFs
         public uint MetadataTableLength { get; set; }
         public ulong EntryTableStart { get; set; }
         public ulong MetadataTableStart { get; set; }
-        public uint SecurityDescriptorOffset { get; set; }
+        public ulong SecurityDescriptorOffset { get; set; }
         public Platform Platform { get; set; }
 
         public HeaderV2()
