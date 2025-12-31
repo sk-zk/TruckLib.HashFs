@@ -59,12 +59,14 @@ namespace TruckLib.HashFs
             WriteWatermark(w);
 
             // Write the header
+            var nonDdsCount = files.Count(x => 
+                x.Key.EndsWith(".dds", StringComparison.OrdinalIgnoreCase));
             stream.Position = 0;
             var header = new HeaderV2()
             {
                 Salt = Salt,
                 HashMethod = "CITY",
-                NumEntries = (uint)(files.Count + dirLists.Count),
+                NumEntries = (uint)(nonDdsCount + dirLists.Count),
                 EntryTableLength = (uint)entryTableLength,
                 NumMetadataEntries = (uint)(metaStream.Length / 4),
                 MetadataTableLength = (uint)metaTableLength,
