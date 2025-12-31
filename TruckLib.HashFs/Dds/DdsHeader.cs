@@ -160,15 +160,15 @@ namespace TruckLib.HashFs.Dds
         /// <summary>
         /// Additional detail about the surfaces stored.
         /// </summary>
-        private FlagField Caps2 { get; set; }
+        private FlagField Caps2;
 
         /// <summary>
         /// Required for a cubemap.
         /// </summary>
         public bool Caps2Cubemap
         {
-            get => Caps[9];
-            set => Caps[9] = value;
+            get => Caps2[9];
+            set => Caps2[9] = value;
         }
 
         /// <summary>
@@ -176,8 +176,8 @@ namespace TruckLib.HashFs.Dds
         /// </summary>
         public bool Caps2CubemapPositiveX
         {
-            get => Caps[10];
-            set => Caps[10] = value;
+            get => Caps2[10];
+            set => Caps2[10] = value;
         }
 
         /// <summary>
@@ -185,8 +185,8 @@ namespace TruckLib.HashFs.Dds
         /// </summary>
         public bool Caps2CubemapNegativeX
         {
-            get => Caps[11];
-            set => Caps[11] = value;
+            get => Caps2[11];
+            set => Caps2[11] = value;
         }
 
         /// <summary>
@@ -194,8 +194,8 @@ namespace TruckLib.HashFs.Dds
         /// </summary>
         public bool Caps2CubemapPositiveY
         {
-            get => Caps[12];
-            set => Caps[12] = value;
+            get => Caps2[12];
+            set => Caps2[12] = value;
         }
 
         /// <summary>
@@ -203,8 +203,8 @@ namespace TruckLib.HashFs.Dds
         /// </summary>
         public bool Caps2CubemapNegativeY
         {
-            get => Caps[13];
-            set => Caps[13] = value;
+            get => Caps2[13];
+            set => Caps2[13] = value;
         }
 
         /// <summary>
@@ -212,8 +212,8 @@ namespace TruckLib.HashFs.Dds
         /// </summary>
         public bool Caps2CubemapPositiveZ
         {
-            get => Caps[14];
-            set => Caps[14] = value;
+            get => Caps2[14];
+            set => Caps2[14] = value;
         }
 
         /// <summary>
@@ -221,8 +221,8 @@ namespace TruckLib.HashFs.Dds
         /// </summary>
         public bool Caps2CubemapNegativeZ
         {
-            get => Caps[15];
-            set => Caps[15] = value;
+            get => Caps2[15];
+            set => Caps2[15] = value;
         }
 
         /// <summary>
@@ -230,10 +230,9 @@ namespace TruckLib.HashFs.Dds
         /// </summary>
         public bool Caps2Volume
         {
-            get => Caps[21];
-            set => Caps[21] = value;
+            get => Caps2[21];
+            set => Caps2[21] = value;
         }
-
 
         public void Deserialize(BinaryReader r, uint? version = null)
         {
