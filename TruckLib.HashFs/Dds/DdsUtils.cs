@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TruckLib.HashFs.HashFsV2;
 using static TruckLib.HashFs.Util;
+using static TruckLib.HashFs.HashFsV2.Consts;
 
 namespace TruckLib.HashFs.Dds
 {
@@ -21,8 +22,6 @@ namespace TruckLib.HashFs.Dds
         public static byte[] ConvertSurfaceData(DdsFile dds)
         {
             var faceCount = 1;
-            var imageAlignment = 512;
-            var pitchAlignment = 256;
             var subData = GenerateSubResourceData(dds, dds.Data.Length);
             var bufferSize = CalculateDdsHashFsLength((uint)faceCount, dds.Header.MipMapCount, subData);
             var buffer = new byte[bufferSize];
@@ -33,11 +32,11 @@ namespace TruckLib.HashFs.Dds
             {
                 for (int mipmapIdx = 0; mipmapIdx < dds.Header.MipMapCount; mipmapIdx++)
                 {
-                    dstOffset = NearestMultiple(dstOffset, imageAlignment);
+                    dstOffset = NearestMultiple(dstOffset, ImageAlignment);
                     var s = subData[mipmapIdx];
                     for (int doneBytes = 0; doneBytes < s.SlicePitch; doneBytes += s.RowPitch)
                     {
-                        dstOffset = NearestMultiple(dstOffset, pitchAlignment);
+                        dstOffset = NearestMultiple(dstOffset, PitchAlignment);
                         Array.Copy(dds.Data, srcOffset, buffer, dstOffset, s.RowPitch);
                         dstOffset += s.RowPitch;
                         srcOffset += s.RowPitch;
@@ -99,20 +98,17 @@ namespace TruckLib.HashFs.Dds
 
         public static int CalculateDdsHashFsLength(uint faceCount, uint mipmapCount, List<SubresourceData> subData)
         {
-            var imageAlignment = 512;
-            var pitchAlignment = 256;
-
             // TODO refactor this
             var dstOffset = 0;
             for (int currentFaceIdx = 0; currentFaceIdx < faceCount; currentFaceIdx++)
             {
                 for (int mipmapIdx = 0; mipmapIdx < mipmapCount; mipmapIdx++)
                 {
-                    dstOffset = NearestMultiple(dstOffset, imageAlignment);
+                    dstOffset = NearestMultiple(dstOffset, ImageAlignment);
                     var s = subData[mipmapIdx];
                     for (int doneBytes = 0; doneBytes < s.SlicePitch; doneBytes += s.RowPitch)
                     {
-                        dstOffset = NearestMultiple(dstOffset, pitchAlignment);
+                        dstOffset = NearestMultiple(dstOffset, PitchAlignment);
                         dstOffset += s.RowPitch;
                     }
                 }

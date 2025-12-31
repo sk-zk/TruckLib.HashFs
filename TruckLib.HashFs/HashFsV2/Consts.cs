@@ -15,5 +15,8 @@ namespace TruckLib.HashFs.HashFsV2
         internal const ulong BlockSize = 16UL;
 
         internal const int MetadataTableBlockSize = 4;
+
+        internal const int ImageAlignment = 512;
+        internal const int PitchAlignment = 256;
     }
 }

@@ -14,43 +14,43 @@ namespace TruckLib.HashFs.HashFsV2
         public uint TextureWidth;
         public uint TextureHeight;
 
-        internal FlagField ImgFlags;
+        internal FlagField ImageFlags;
         internal FlagField SampleFlags;
 
         public uint MipmapCount
         {
-            get => ImgFlags.GetBitString(0, 4) + 1;
-            set => ImgFlags.SetBitString(0, 4, value - 1);
+            get => ImageFlags.GetBitString(0, 4) + 1;
+            set => ImageFlags.SetBitString(0, 4, value - 1);
         }
 
         public DxgiFormat Format
         {
-            get => (DxgiFormat)ImgFlags.GetBitString(4, 8);
-            set => ImgFlags.SetBitString(4, 8, (uint)value);
+            get => (DxgiFormat)ImageFlags.GetBitString(4, 8);
+            set => ImageFlags.SetBitString(4, 8, (uint)value);
         }
 
         public bool IsCube 
         {
-            get => ImgFlags.GetBitString(12, 2) != 0;
-            set => ImgFlags.SetBitString(12, 2, value ? 1u : 0u);
+            get => ImageFlags.GetBitString(12, 2) != 0;
+            set => ImageFlags.SetBitString(12, 2, value ? 1u : 0u);
         }
 
         public uint FaceCount 
         {
-            get => ImgFlags.GetBitString(14, 6) + 1;
-            set => ImgFlags.SetBitString(14, 6, value - 1);
+            get => ImageFlags.GetBitString(14, 6) + 1;
+            set => ImageFlags.SetBitString(14, 6, value - 1);
         }
 
         public int PitchAlignment
         {
-            get => 1 << (int)ImgFlags.GetBitString(20, 4);
-            set => ImgFlags.SetBitString(20, 4, (uint)Math.Log2(value));
+            get => 1 << (int)ImageFlags.GetBitString(20, 4);
+            set => ImageFlags.SetBitString(20, 4, (uint)Math.Log2(value));
         }
 
         public int ImageAlignment
         {
-            get => 1 << (int)ImgFlags.GetBitString(24, 4);
-            set => ImgFlags.SetBitString(24, 4, (uint)Math.Log2(value));
+            get => 1 << (int)ImageFlags.GetBitString(24, 4);
+            set => ImageFlags.SetBitString(24, 4, (uint)Math.Log2(value));
         }
 
         public TobjFilter MagFilter 
@@ -139,8 +139,8 @@ namespace TruckLib.HashFs.HashFsV2
             tobjMeta.Format = dds.HeaderDxt10.Format;
             tobjMeta.IsCube = tobj.Type == TobjType.CubeMap;
             tobjMeta.FaceCount = 1;
-            tobjMeta.PitchAlignment = 256;
-            tobjMeta.ImageAlignment = 512;
+            tobjMeta.PitchAlignment = Consts.PitchAlignment;
+            tobjMeta.ImageAlignment = Consts.ImageAlignment;
             tobjMeta.MagFilter = tobj.MagFilter;
             tobjMeta.MinFilter = tobj.MinFilter;
             tobjMeta.MipFilter = tobj.MipFilter;
@@ -154,7 +154,7 @@ namespace TruckLib.HashFs.HashFsV2
         {
             TextureWidth = r.ReadUInt16() + 1u;
             TextureHeight = r.ReadUInt16() + 1u;
-            ImgFlags = new FlagField(r.ReadUInt32());
+            ImageFlags = new FlagField(r.ReadUInt32());
             SampleFlags = new FlagField(r.ReadUInt32());
         }
 
@@ -162,7 +162,7 @@ namespace TruckLib.HashFs.HashFsV2
         {
             w.Write((ushort)(TextureWidth - 1));
             w.Write((ushort)(TextureHeight - 1));
-            w.Write(ImgFlags.Bits);
+            w.Write(ImageFlags.Bits);
             w.Write(SampleFlags.Bits);
         }
     }
