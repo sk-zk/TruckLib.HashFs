@@ -141,9 +141,9 @@ namespace TruckLib.HashFs
             w.Write(Encoding.ASCII.GetBytes(watermark));
         }
 
-        internal static void CompressZlib(Stream input, Stream output, CompressionLevel compressionLevelevel)
+        internal static void CompressZlib(Stream input, Stream output, CompressionLevel compressionLevel)
         {
-            using var zlibStream = new ZLibStream(output, compressionLevelevel, true);
+            using var zlibStream = new ZLibStream(output, compressionLevel, true);
             input.CopyTo(zlibStream);
         }
 
