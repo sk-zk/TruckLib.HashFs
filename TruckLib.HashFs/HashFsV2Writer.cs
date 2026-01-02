@@ -7,10 +7,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using TruckLib.HashFs.Dds;
-using TruckLib.Models;
-using static TruckLib.HashFs.Util;
 using TruckLib.HashFs.HashFsV2;
+using TruckLib.Models;
 using static TruckLib.HashFs.HashFsV2.Consts;
+using static TruckLib.HashFs.Util;
 
 namespace TruckLib.HashFs
 {    
@@ -131,9 +131,8 @@ namespace TruckLib.HashFs
             var buffer = DdsUtils.ConvertSurfaceData(dds);
 
             // Write the dds bytes
-            // TODO GDeflate compression
-            var compress = false;
-            outStream.Write(buffer);
+            // TODO: Use GDeflate compression
+            WriteFileData(buffer, outStream);
 
             var endPos = outStream.Position;
             var uncompressedSize = (uint)buffer.Length;
@@ -152,10 +151,10 @@ namespace TruckLib.HashFs
             {
                 CompressedSize = compressedSize,
                 Size = uncompressedSize,
-                IsCompressed = compress,
+                IsCompressed = true,
                 OffsetBlock = (uint)((ulong)startPos / BlockSize),
             };
-            meta.IsCompressed = compress;
+            meta.IsCompressed = true;
             meta.Flags2.Bits = 48; // don't know what this does
             meta.Serialize(metaWriter);
 
@@ -186,16 +185,7 @@ namespace TruckLib.HashFs
             // Write the file
             var fileStream = file.Open();
 
-            var compress = CompressionLevel != CompressionLevel.NoCompression
-                && fileStream.Length > CompressionThreshold;
-            if (compress)
-            {
-                CompressZlib(fileStream, outStream, CompressionLevel);
-            }
-            else
-            {
-                fileStream.CopyTo(outStream);
-            }
+            bool compress = WriteFileData(fileStream, outStream);
 
             var endPos = outStream.Position;
             var uncompressedSize = (uint)fileStream.Length;
@@ -235,6 +225,29 @@ namespace TruckLib.HashFs
             };
 
             return entry;
+        }
+
+        private bool WriteFileData(byte[] input, Stream output)
+        {
+            using var inputStream = new MemoryStream(input);
+            return WriteFileData(inputStream, output);
+        }
+
+        private bool WriteFileData(Stream input, Stream output)
+        {
+            var compress = CompressionLevel != CompressionLevel.NoCompression
+                && input.Length > CompressionThreshold;
+
+            if (compress)
+            {
+                CompressZlib(input, output, CompressionLevel);
+            }
+            else
+            {
+                input.CopyTo(output);
+            }
+
+            return compress;
         }
 
         private static ushort WriteMetadataChunkTypes(BinaryWriter w, long metaOffset, IFile file, string extension)
