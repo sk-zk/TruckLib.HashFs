@@ -32,5 +32,12 @@ namespace TruckLib.HashFs.Tests.Dds
             Assert.Equal(DxgiFormat.BC3_UNORM_SRGB, ddsFile.HeaderDxt10.Format);
             Assert.Equal(D3d10ResourceDimension.Texture2d, ddsFile.HeaderDxt10.ResourceDimension);
         }
+
+        [Fact]
+        public void ThrowsIfMagicInvalid()
+        {
+            using var bogusStream = new MemoryStream([1,2,3,4,5,6,7,8]);
+            Assert.Throws<InvalidDataException>(() => DdsFile.Load(bogusStream));
+        }
     }
 }

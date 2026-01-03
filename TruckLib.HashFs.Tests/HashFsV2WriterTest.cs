@@ -64,6 +64,29 @@ namespace TruckLib.HashFs.Tests
         }
 
         [Fact]
+        public void AddCubemapAndSave()
+        {
+            var writer = new HashFsV2Writer();
+
+            writer.Add(@"Data/HashFsV2Writer/iconomaker_cube.dds", 
+                "/material/environment/iconomaker_cube/iconomaker_cube.dds");
+            writer.Add(@"Data/HashFsV2Writer/iconomaker_cube.tobj", 
+                "/material/environment/iconomaker_cube/iconomaker_cube.tobj");
+
+            using var outStream = new MemoryStream();
+            writer.Save(outStream);
+            outStream.Position = 0;
+
+            using var reader = HashFsReader.Open(outStream);
+
+            var tobjEntry = (EntryV2)reader.GetEntry("/material/environment/iconomaker_cube/iconomaker_cube.tobj");
+            Assert.NotNull(tobjEntry.TobjMetadata);
+            Assert.True(tobjEntry.TobjMetadata.Value.IsCube);
+            Assert.Equal(6u, tobjEntry.TobjMetadata!.Value.FaceCount);
+            Assert.Equal(9u, tobjEntry.TobjMetadata!.Value.MipmapCount);
+        }
+
+        [Fact]
         public void ThrowIfArchivePathIsEmptyString()
         {
             var writer = new HashFsV2Writer();
@@ -78,6 +101,55 @@ namespace TruckLib.HashFs.Tests
             var writer = new HashFsV2Writer();
             using var ms = new MemoryStream();
             Assert.Throws<ArgumentException>(() => writer.Add(ms, "/"));
+        }
+
+        [Fact]
+        public void ThrowIfTobjReferencedDdsIsNonDx10()
+        {
+            var writer = new HashFsV2Writer();
+
+            writer.Add(@"Data/HashFsV2Writer/dxt1.dds", "/dxt1.dds");
+            writer.Add(@"Data/HashFsV2Writer/dxt1.tobj", "/dxt1.tobj");
+
+            using var outStream = new MemoryStream();
+            Assert.Throws<NotSupportedException>(() => writer.Save(outStream));
+        }
+
+        [Fact]
+        public void ThrowIfTobjReferencedDdsMissing()
+        {
+            var writer = new HashFsV2Writer();
+
+            writer.Add(@"Data/HashFsV2Writer/iconomaker_cube.tobj", "/bla.tobj");
+
+            using var outStream = new MemoryStream();
+            Assert.Throws<FileNotFoundException>(() => writer.Save(outStream));
+        }
+
+        [Fact]
+        public void ThrowIfTobjReferencedFileIsNotDds()
+        {
+            var writer = new HashFsV2Writer();
+
+            writer.Add(@"Data/HashFsV2Writer/not_dds.tobj", "/not_dds.tobj");
+            writer.Add([7, 2, 7], "/asdf.727");
+
+            using var outStream = new MemoryStream();
+            Assert.Throws<ArgumentException>(() => writer.Save(outStream));
+        }
+
+        [Fact]
+        public void ThrowIfTobjReferencedDdsIsInvalid()
+        {
+            var writer = new HashFsV2Writer();
+
+            writer.Add(@"Data/HashFsV2Writer/iconomaker_cube.tobj",
+                "/material/environment/iconomaker_cube/iconomaker_cube.tobj");
+            writer.Add([1,2,3,4,5,6,7,8],
+                "/material/environment/iconomaker_cube/iconomaker_cube.dds");
+
+            using var outStream = new MemoryStream();
+            Assert.Throws<InvalidDataException>(() => writer.Save(outStream));
         }
     }
 }
