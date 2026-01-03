@@ -196,6 +196,11 @@ namespace TruckLib.HashFs
                 throw new InvalidDataException($"\"{tobj.TexturePath}\" is not a valid DDS file.");
             }
 
+            if (dds.HeaderDxt10 == null)
+            {
+                throw new NotSupportedException($"\"{tobj.TexturePath}\" is not in DX10 format, which is not supported.");
+            }
+
             return (tobj, dds);
         }
 
