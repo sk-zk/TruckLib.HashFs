@@ -112,7 +112,7 @@ namespace TruckLib.HashFs.Tests
             writer.Add(@"Data/HashFsV2Writer/dxt1.tobj", "/dxt1.tobj");
 
             using var outStream = new MemoryStream();
-            Assert.Throws<NotSupportedException>(() => writer.Save(outStream));
+            Assert.Throws<TexturePackingException>(() => writer.Save(outStream));
         }
 
         [Fact]
@@ -123,7 +123,7 @@ namespace TruckLib.HashFs.Tests
             writer.Add(@"Data/HashFsV2Writer/iconomaker_cube.tobj", "/bla.tobj");
 
             using var outStream = new MemoryStream();
-            Assert.Throws<FileNotFoundException>(() => writer.Save(outStream));
+            Assert.Throws<TexturePackingException>(() => writer.Save(outStream));
         }
 
         [Fact]
@@ -135,7 +135,7 @@ namespace TruckLib.HashFs.Tests
             writer.Add([7, 2, 7], "/asdf.727");
 
             using var outStream = new MemoryStream();
-            Assert.Throws<ArgumentException>(() => writer.Save(outStream));
+            Assert.Throws<TexturePackingException>(() => writer.Save(outStream));
         }
 
         [Fact]
@@ -149,7 +149,7 @@ namespace TruckLib.HashFs.Tests
                 "/material/environment/iconomaker_cube/iconomaker_cube.dds");
 
             using var outStream = new MemoryStream();
-            Assert.Throws<InvalidDataException>(() => writer.Save(outStream));
+            Assert.Throws<TexturePackingException>(() => writer.Save(outStream));
         }
     }
 }

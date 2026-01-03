@@ -119,7 +119,7 @@ namespace TruckLib.HashFs
             var startPos = outStream.Position;
 
             // Open the tobj and dds files
-            var (tobj, dds) = OpenTextureFiles(tobjFile, files);
+            var (tobj, dds) = OpenTextureFiles(tobjFile, tobjPath, files);
 
             // Realign dds bytes
             var buffer = DdsUtils.ConvertSurfaceData(dds);
@@ -163,7 +163,7 @@ namespace TruckLib.HashFs
             return entry;
         }
 
-        private static (Tobj Tobj, DdsFile Dds) OpenTextureFiles(IFile tobjFile, Dictionary<string, IFile> files)
+        private static (Tobj Tobj, DdsFile Dds) OpenTextureFiles(IFile tobjFile, string tobjPath, Dictionary<string, IFile> files)
         {
             Tobj tobj;
             try
@@ -171,20 +171,21 @@ namespace TruckLib.HashFs
                 using var fileStream = tobjFile.Open();
                 tobj = Tobj.Load(fileStream);
             }
-            catch (UnsupportedVersionException)
+            catch (UnsupportedVersionException uvex)
             {
-                throw;
+                throw new TexturePackingException(tobjPath, uvex.Message);
             }
 
             if (!files.TryGetValue(tobj.TexturePath, out var ddsEntry))
             {
-                throw new FileNotFoundException($"Referenced file \"{tobj.TexturePath}\" " +
-                    $"cannot be accessed or does not exist.");
+                throw new TexturePackingException(tobjPath, 
+                    $"Referenced file \"{tobj.TexturePath}\" cannot be accessed or does not exist.");
             }
 
             if (!tobj.TexturePath.EndsWith(".dds", StringComparison.OrdinalIgnoreCase))
             {
-                throw new ArgumentException($"\"{tobj.TexturePath}\" is not a DDS file.");
+                throw new TexturePackingException(tobjPath, 
+                    $"\"{tobj.TexturePath}\" is not a DDS file.");
             }
 
             DdsFile dds;
@@ -194,13 +195,14 @@ namespace TruckLib.HashFs
             }
             catch (InvalidDataException)
             {
-                throw new InvalidDataException($"\"{tobj.TexturePath}\" is not a valid DDS file.");
+                throw new TexturePackingException(tobjPath, 
+                    $"\"{tobj.TexturePath}\" is not a valid DDS file.");
             }
 
             if (dds.HeaderDxt10 == null)
             {
-                throw new NotSupportedException($"\"{tobj.TexturePath}\" is not in DX10 format, " +
-                    $"which is not supported.");
+                throw new TexturePackingException(tobjPath,
+                    $"\"{tobj.TexturePath}\" is not in DX10 format, which is not supported.");
             }
 
             return (tobj, dds);
