@@ -126,7 +126,7 @@ namespace TruckLib.HashFs
 
             // Write the dds bytes
             // TODO: Use GDeflate compression
-            WriteFileData(buffer, outStream);
+            var compressed = WriteFileData(buffer, outStream);
 
             var endPos = outStream.Position;
             var uncompressedSize = (uint)buffer.Length;
@@ -145,10 +145,10 @@ namespace TruckLib.HashFs
             {
                 CompressedSize = compressedSize,
                 Size = uncompressedSize,
-                IsCompressed = true,
+                IsCompressed = compressed,
                 OffsetBlock = (uint)((ulong)startPos / BlockSize),
             };
-            meta.IsCompressed = true;
+            meta.IsCompressed = compressed;
             meta.Flags2.Bits = 48; // don't know what this does
             meta.Serialize(metaWriter);
 
@@ -158,7 +158,7 @@ namespace TruckLib.HashFs
                 Hash = HashPath(tobjPath, Salt),
                 MetadataIndex = (uint)(metaOffset / MetadataTableBlockSize),
                 MetadataCount = numChunks,
-                Flags = (ushort)(tobjFile.IsDirectory ? 1 : 0),
+                Flags = 0,
             };
             return entry;
         }
