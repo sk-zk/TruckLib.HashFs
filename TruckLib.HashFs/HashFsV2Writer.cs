@@ -98,11 +98,11 @@ namespace TruckLib.HashFs
                 EntryTableEntry entry;
                 if (extension == ".tobj")
                 {
-                    entry = WriteTobjDdsEntry(file, files, outStream, metaWriter, path);
+                    entry = WriteTobjDdsEntry(file, path, files, outStream, metaWriter);
                 }
                 else
                 {
-                    entry = WriteRegularEntry(file, outStream, metaWriter, path);
+                    entry = WriteRegularEntry(file, path, outStream, metaWriter);
                 }
                 entries.Add(entry);
 
@@ -113,19 +113,13 @@ namespace TruckLib.HashFs
             return (entries, metaStream);
         }
 
-        private EntryTableEntry WriteTobjDdsEntry(IFile file, Dictionary<string, IFile> files, Stream outStream,
-            BinaryWriter metaWriter, string path)
+        private EntryTableEntry WriteTobjDdsEntry(IFile tobjFile, string tobjPath, Dictionary<string, IFile> files,
+            Stream outStream, BinaryWriter metaWriter)
         {
             var startPos = outStream.Position;
 
             // Open the tobj and dds files
-            var tobj = LoadTobjFromFileStream(file);
-
-            if (!files.TryGetValue(tobj.TexturePath, out var ddsEntry))
-            {
-                throw new FileNotFoundException();
-            }
-            var dds = DdsFile.Load(ddsEntry.Open());
+            var (tobj, dds) = OpenTextureFiles(tobjFile, files);
 
             // Realign dds bytes
             var buffer = DdsUtils.ConvertSurfaceData(dds);
@@ -141,8 +135,8 @@ namespace TruckLib.HashFs
             // Write the metadata table entry
             var metaOffset = metaWriter.BaseStream.Position;
 
-            var extension = Path.GetExtension(path).ToLowerInvariant();
-            var numChunks = WriteMetadataChunkTypes(metaWriter, metaOffset, file, extension);
+            var extension = Path.GetExtension(tobjPath).ToLowerInvariant();
+            var numChunks = WriteMetadataChunkTypes(metaWriter, metaOffset, tobjFile, extension);
 
             var tobjMeta = PackedTobjDdsMetadata.FromTobj(tobj, dds);
             tobjMeta.Serialize(metaWriter);
@@ -161,12 +155,48 @@ namespace TruckLib.HashFs
             // Create the entry table entry
             var entry = new EntryTableEntry()
             {
-                Hash = HashPath(path, Salt),
+                Hash = HashPath(tobjPath, Salt),
                 MetadataIndex = (uint)(metaOffset / MetadataTableBlockSize),
                 MetadataCount = numChunks,
-                Flags = (ushort)(file.IsDirectory ? 1 : 0),
+                Flags = (ushort)(tobjFile.IsDirectory ? 1 : 0),
             };
             return entry;
+        }
+
+        private static (Tobj Tobj, DdsFile Dds) OpenTextureFiles(IFile tobjFile, Dictionary<string, IFile> files)
+        {
+            Tobj tobj;
+            try
+            {
+                tobj = LoadTobjFromFileStream(tobjFile);
+            }
+            catch (UnsupportedVersionException)
+            {
+                throw;
+            }
+
+            if (!files.TryGetValue(tobj.TexturePath, out var ddsEntry))
+            {
+                throw new FileNotFoundException($"Referenced file \"{tobj.TexturePath}\" " +
+                    $"cannot be accessed or does not exist.");
+            }
+
+            if (!tobj.TexturePath.EndsWith(".dds", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException($"\"{tobj.TexturePath}\" is not a DDS file.");
+            }
+
+            DdsFile dds;
+            try
+            {
+                dds = DdsFile.Load(ddsEntry.Open());
+            }
+            catch (InvalidDataException)
+            {
+                throw new InvalidDataException($"\"{tobj.TexturePath}\" is not a valid DDS file.");
+            }
+
+            return (tobj, dds);
         }
 
         private static Tobj LoadTobjFromFileStream(IFile file)
@@ -178,7 +208,7 @@ namespace TruckLib.HashFs
             return tobj;
         }
 
-        private EntryTableEntry WriteRegularEntry(IFile file, Stream outStream, BinaryWriter metaWriter, string path)
+        private EntryTableEntry WriteRegularEntry(IFile file, string path, Stream outStream, BinaryWriter metaWriter)
         {
             var startPos = outStream.Position;
 
