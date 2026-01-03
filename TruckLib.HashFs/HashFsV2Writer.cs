@@ -168,7 +168,8 @@ namespace TruckLib.HashFs
             Tobj tobj;
             try
             {
-                tobj = LoadTobjFromFileStream(tobjFile);
+                using var fileStream = tobjFile.Open();
+                tobj = Tobj.Load(fileStream);
             }
             catch (UnsupportedVersionException)
             {
@@ -198,19 +199,11 @@ namespace TruckLib.HashFs
 
             if (dds.HeaderDxt10 == null)
             {
-                throw new NotSupportedException($"\"{tobj.TexturePath}\" is not in DX10 format, which is not supported.");
+                throw new NotSupportedException($"\"{tobj.TexturePath}\" is not in DX10 format, " +
+                    $"which is not supported.");
             }
 
             return (tobj, dds);
-        }
-
-        private static Tobj LoadTobjFromFileStream(IFile file)
-        {
-            var tobjStream = file.Open();
-            using var tobjBr = new BinaryReader(tobjStream);
-            var tobj = new Tobj();
-            tobj.Deserialize(tobjBr);
-            return tobj;
         }
 
         private EntryTableEntry WriteRegularEntry(IFile file, string path, Stream outStream, BinaryWriter metaWriter)
