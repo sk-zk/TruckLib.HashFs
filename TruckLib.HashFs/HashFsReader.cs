@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using static TruckLib.HashFs.HashFsConsts;
 
 namespace TruckLib.HashFs
 {
@@ -9,8 +10,6 @@ namespace TruckLib.HashFs
     /// </summary>
     public static class HashFsReader
     {
-        private const string SupportedHashMethod = "CITY";
-
         /// <summary>
         /// Opens a HashFS archive.
         /// </summary>
@@ -59,7 +58,7 @@ namespace TruckLib.HashFs
 
             var header = Header.Deserialize(reader);
 
-            if (header.HashMethod != SupportedHashMethod)
+            if (header.HashMethod != CityHashId)
             {
                 throw new NotSupportedException($"Unsupported hash method {header.HashMethod}");
             }

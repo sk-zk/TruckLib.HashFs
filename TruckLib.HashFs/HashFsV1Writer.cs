@@ -6,6 +6,7 @@ using System.IO.Hashing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static TruckLib.HashFs.HashFsConsts;
 
 namespace TruckLib.HashFs
 {
@@ -33,7 +34,7 @@ namespace TruckLib.HashFs
             using var w = new BinaryWriter(stream, Encoding.UTF8, true);
 
             // Generate directory listing files
-            var dirLists = GenerateDirectoryListings(stream, tree, "/");
+            var dirLists = GenerateDirectoryListings(stream, tree, Root);
 
             // Write the files and generate the entry table
             var entryMetadata = WriteFiles(stream, files.Concat(dirLists));
@@ -53,7 +54,7 @@ namespace TruckLib.HashFs
             var header = new HeaderV1()
             {
                 Salt = Salt,
-                HashMethod = "CITY",
+                HashMethod = CityHashId,
                 NumEntries = (uint)(files.Count + dirLists.Count),
                 StartOffset = (uint)entryTableOffset,
             };

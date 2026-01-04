@@ -63,7 +63,7 @@ namespace TruckLib.HashFs.HashFsV2
                 else if (value == TobjFilter.Linear || value == TobjFilter.Default)
                     SampleFlags[0] = true;
                 else
-                    throw new ArgumentException();
+                    throw new ArgumentException(nameof(MagFilter));
             }
         }
 
@@ -77,7 +77,7 @@ namespace TruckLib.HashFs.HashFsV2
                 else if (value == TobjFilter.Linear || value == TobjFilter.Default)
                     SampleFlags[1] = true;
                 else
-                    throw new ArgumentException();
+                    throw new ArgumentException(nameof(MinFilter));
             }
         }
 

@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using static TruckLib.HashFs.HashFsConsts;
 
 namespace TruckLib.HashFs
 {
@@ -38,6 +39,9 @@ namespace TruckLib.HashFs
         /// </summary>
         protected readonly Directory tree = new("");
 
+        /// <summary>
+        /// The maximum length one segment of a path can have in HashFS v2.
+        /// </summary>
         private const uint MaxPathPartLength = 255;
 
         /// <summary>
@@ -90,7 +94,7 @@ namespace TruckLib.HashFs
                 throw new ArgumentNullException($"{nameof(archivePath)}");
             }
 
-            var pathParts = archivePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var pathParts = archivePath.Split(Separator, StringSplitOptions.RemoveEmptyEntries);
             if (pathParts.Length == 0)
             {
                 throw new ArgumentException("The archive path must not be \"/\".", 
@@ -158,10 +162,10 @@ namespace TruckLib.HashFs
 
         internal static string Combine(string path1, string path2)
         {
-            if (path1.EndsWith('/'))
+            if (path1.EndsWith(Separator))
                 return path1 + path2;
             else
-                return path1 + "/" + path2;
+                return path1 + Separator + path2;
         }
 
         public interface IFile

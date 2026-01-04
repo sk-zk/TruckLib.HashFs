@@ -15,7 +15,7 @@ namespace TruckLib.HashFs
     public class AssetLoader : IFileSystem
     {   
         /// <inheritdoc/>
-        public char DirectorySeparator => '/';
+        public char DirectorySeparator => HashFsConsts.Separator;
 
         private readonly IFileSystem[] fileSystems;
 
@@ -90,7 +90,7 @@ namespace TruckLib.HashFs
         /// <inheritdoc/>
         public string GetParent(string path)
         {
-            if (path == "/")
+            if (path == HashFsConsts.Root)
             {
                 return null;
             }

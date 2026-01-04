@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static TruckLib.HashFs.HashFsConsts;
 
 namespace TruckLib.HashFs
 {
@@ -24,9 +25,6 @@ namespace TruckLib.HashFs
         public BinaryReader BaseReader => Reader;
 
         internal required BinaryReader Reader { get; init; }
-
-        protected const char Separator = '/';
-        protected const string Root = "/";
 
         /// <inheritdoc/>
         char IFileSystem.DirectorySeparator => Separator;

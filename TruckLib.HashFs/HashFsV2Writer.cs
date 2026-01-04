@@ -10,6 +10,7 @@ using TruckLib.HashFs.Dds;
 using TruckLib.HashFs.HashFsV2;
 using TruckLib.Models;
 using static TruckLib.HashFs.HashFsV2.Consts;
+using static TruckLib.HashFs.HashFsConsts;
 using static TruckLib.HashFs.Util;
 
 namespace TruckLib.HashFs
@@ -32,7 +33,7 @@ namespace TruckLib.HashFs
             using var w = new BinaryWriter(stream, Encoding.UTF8, true);
 
             // Generate directory listing files
-            var dirLists = GenerateDirectoryListings(stream, tree, "/");
+            var dirLists = GenerateDirectoryListings(stream, tree, Root);
 
             // Write the files, generate the metadata table stream,
             // and generate the entry table entries
@@ -65,10 +66,10 @@ namespace TruckLib.HashFs
             var header = new HeaderV2()
             {
                 Salt = Salt,
-                HashMethod = "CITY",
+                HashMethod = CityHashId,
                 NumEntries = (uint)(nonDdsCount + dirLists.Count),
                 EntryTableLength = (uint)entryTableLength,
-                NumMetadataEntries = (uint)(metaStream.Length / 4),
+                NumMetadataEntries = (uint)(metaStream.Length / MetadataTableBlockSize),
                 MetadataTableLength = (uint)metaTableLength,
                 EntryTableStart = (uint)entryTableStart,
                 MetadataTableStart = (uint)metaTableStart,
