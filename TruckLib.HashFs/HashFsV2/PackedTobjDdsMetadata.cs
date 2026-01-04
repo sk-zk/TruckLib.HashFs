@@ -143,7 +143,9 @@ namespace TruckLib.HashFs.HashFsV2
             tobjMeta.ImageAlignment = Consts.ImageAlignment;
             tobjMeta.MagFilter = tobj.MagFilter;
             tobjMeta.MinFilter = tobj.MinFilter;
-            tobjMeta.MipFilter = tobj.MipFilter;
+            tobjMeta.MipFilter = tobj.MipFilter == TobjMipFilter.Default 
+                ? TobjMipFilter.Trilinear 
+                : tobj.MipFilter;
             tobjMeta.AddrU = tobj.AddrU;
             tobjMeta.AddrV = tobj.AddrV;
             tobjMeta.AddrW = tobj.AddrW;
