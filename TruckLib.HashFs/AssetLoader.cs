@@ -13,7 +13,7 @@ namespace TruckLib.HashFs
     /// how mod files are loaded in ATS/ETS2.
     /// </summary>
     public class AssetLoader : IFileSystem
-    {   
+    {       
         /// <inheritdoc/>
         public char DirectorySeparator => HashFsConsts.Separator;
 

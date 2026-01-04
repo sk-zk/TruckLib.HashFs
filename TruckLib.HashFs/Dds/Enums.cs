@@ -1,5 +1,10 @@
 ﻿namespace TruckLib.HashFs.Dds
 {
+    /// <summary>
+    /// The surface pixel format; see
+    /// <see href="https://learn.microsoft.com/en-us/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format">
+    /// MSDN</see> for details.
+    /// </summary>
     public enum DxgiFormat
     {
         UNKNOWN = 0,

@@ -23,8 +23,10 @@ namespace TruckLib.HashFs
         public int CompressionThreshold { get; set; } = 64;
 
         /// <summary>
-        /// <para>The compression level used to compress files above the <see cref="CompressionThreshold"/>.</para>
-        /// <para>Set this to <see cref="CompressionLevel.NoCompression"/> to disable compression.</para>
+        /// <para>The compression level used to compress files above the 
+        /// <see cref="CompressionThreshold">CompressionThreshold</see>.</para>
+        /// <para>Set this to <see cref="CompressionLevel.NoCompression">NoCompression</see> 
+        /// to disable compression.</para>
         /// </summary>
         public CompressionLevel CompressionLevel { get; set; } = CompressionLevel.SmallestSize;
 
@@ -168,6 +170,7 @@ namespace TruckLib.HashFs
                 return path1 + Separator + path2;
         }
 
+        /// <exclude />
         public interface IFile
         {
             bool IsDirectory { get; set; }
@@ -175,6 +178,7 @@ namespace TruckLib.HashFs
             Stream Open();
         }
 
+        /// <exclude />
         public class DiskFile : IFile
         {
             public bool IsDirectory { get; set; }
@@ -184,6 +188,7 @@ namespace TruckLib.HashFs
             public Stream Open() => File.OpenRead(Path);
         }
 
+        /// <exclude />
         public class StreamFile : IFile
         {
             public bool IsDirectory { get; set; }
@@ -195,6 +200,7 @@ namespace TruckLib.HashFs
             public Stream Open() => Stream;
         }
 
+        /// <exclude />
         public class BufferFile : IFile
         {
             public bool IsDirectory { get; set; }
@@ -204,6 +210,7 @@ namespace TruckLib.HashFs
             public Stream Open() => new MemoryStream(Buffer);
         }
 
+        /// <exclude />
         public class Directory
         {
             public string Name { get; init; }
@@ -217,6 +224,5 @@ namespace TruckLib.HashFs
                 Name = name;
             }
         }
-
     }  
 }
