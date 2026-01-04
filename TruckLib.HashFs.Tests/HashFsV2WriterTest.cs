@@ -151,5 +151,16 @@ namespace TruckLib.HashFs.Tests
             using var outStream = new MemoryStream();
             Assert.Throws<TexturePackingException>(() => writer.Save(outStream));
         }
+
+        [Fact]
+        public void ThrowIfPathPartExceeds255()
+        {
+            var writer = new HashFsV2Writer();
+
+            var acceptable = "/bla/" + new string('a', 255) + "/asd";
+            var tooLong = "/bla/" + new string('a', 256) + "/asd";
+            writer.Add([1, 2, 3, 4], acceptable); // should not throw
+            Assert.Throws<ArgumentException>(() => writer.Add([1,2,3,4], tooLong));
+        }
     }
 }

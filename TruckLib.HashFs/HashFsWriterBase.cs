@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -36,6 +37,8 @@ namespace TruckLib.HashFs
         /// Stores the directory tree from which the directory listing files will be generated.
         /// </summary>
         protected readonly Directory tree = new("");
+
+        private const uint MaxPathPartLength = 255;
 
         /// <summary>
         /// <para>Adds a file on the local file system to the archive.</para>
@@ -90,7 +93,13 @@ namespace TruckLib.HashFs
             var pathParts = archivePath.Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (pathParts.Length == 0)
             {
-                throw new ArgumentException("The archive path must not be \"/\".", nameof(archivePath));
+                throw new ArgumentException("The archive path must not be \"/\".", 
+                    nameof(archivePath));
+            }
+            if (pathParts.Any(x => x.Length > MaxPathPartLength))
+            {
+                throw new ArgumentException($"Directory or file names " +
+                    $"must not exceed {MaxPathPartLength} per path component.");
             }
 
             var archiveFileName = pathParts[^1];
