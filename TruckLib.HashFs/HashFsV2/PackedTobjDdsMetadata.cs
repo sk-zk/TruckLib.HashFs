@@ -132,23 +132,25 @@ namespace TruckLib.HashFs.HashFsV2
 
         internal static PackedTobjDdsMetadata FromTobj(Tobj tobj, DdsFile dds)
         {
-            var tobjMeta = new PackedTobjDdsMetadata();
-            tobjMeta.TextureWidth = dds.Header.Width;
-            tobjMeta.TextureHeight = dds.Header.Height;
-            tobjMeta.MipmapCount = dds.Header.MipMapCount;
-            tobjMeta.Format = dds.HeaderDxt10.Format;
-            tobjMeta.IsCube = tobj.Type == TobjType.CubeMap;
-            tobjMeta.FaceCount = dds.Header.Caps2Cubemap ? 6u : 1u;
-            tobjMeta.PitchAlignment = Consts.PitchAlignment;
-            tobjMeta.ImageAlignment = Consts.ImageAlignment;
-            tobjMeta.MagFilter = tobj.MagFilter;
-            tobjMeta.MinFilter = tobj.MinFilter;
-            tobjMeta.MipFilter = tobj.MipFilter == TobjMipFilter.Default 
-                ? TobjMipFilter.Trilinear 
-                : tobj.MipFilter;
-            tobjMeta.AddrU = tobj.AddrU;
-            tobjMeta.AddrV = tobj.AddrV;
-            tobjMeta.AddrW = tobj.AddrW;
+            var tobjMeta = new PackedTobjDdsMetadata
+            {
+                TextureWidth = dds.Header.Width,
+                TextureHeight = dds.Header.Height,
+                MipmapCount = dds.Header.MipMapCount,
+                Format = dds.HeaderDxt10.Format,
+                IsCube = tobj.Type == TobjType.CubeMap,
+                FaceCount = dds.Header.Caps2Cubemap ? 6u : 1u,
+                PitchAlignment = Consts.PitchAlignment,
+                ImageAlignment = Consts.ImageAlignment,
+                MagFilter = tobj.MagFilter,
+                MinFilter = tobj.MinFilter,
+                MipFilter = tobj.MipFilter == TobjMipFilter.Default
+                    ? TobjMipFilter.Trilinear
+                    : tobj.MipFilter,
+                AddrU = tobj.AddrU,
+                AddrV = tobj.AddrV,
+                AddrW = tobj.AddrW
+            };
             return tobjMeta;
         }
 
