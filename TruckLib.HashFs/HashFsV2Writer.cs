@@ -203,7 +203,7 @@ namespace TruckLib.HashFs
             if (dds.HeaderDxt10 == null)
             {
                 throw new TexturePackingException(tobjPath,
-                    $"\"{tobj.TexturePath}\" is not in DX10 format, which is not supported.");
+                    $"\"{tobj.TexturePath}\" is not in DX10 format, which is not (yet) supported.");
             }
 
             return (tobj, dds);
