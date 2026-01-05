@@ -16,7 +16,7 @@ using static TruckLib.HashFs.Util;
 namespace TruckLib.HashFs
 {    
     /// <summary>
-    /// Creates a new HashFS v1 archive.
+    /// Creates a new HashFS v2 archive.
     /// </summary>
     public class HashFsV2Writer : HashFsWriterBase
     {
@@ -114,8 +114,8 @@ namespace TruckLib.HashFs
             return (entries, metaStream);
         }
 
-        private EntryTableEntry WriteTobjDdsEntry(IFile tobjFile, string tobjPath, Dictionary<string, IFile> files,
-            Stream outStream, BinaryWriter metaWriter)
+        private EntryTableEntry WriteTobjDdsEntry(IFile tobjFile, string tobjPath, 
+            Dictionary<string, IFile> files, Stream outStream, BinaryWriter metaWriter)
         {
             var startPos = outStream.Position;
 
@@ -164,7 +164,8 @@ namespace TruckLib.HashFs
             return entry;
         }
 
-        private static (Tobj Tobj, DdsFile Dds) OpenTextureFiles(IFile tobjFile, string tobjPath, Dictionary<string, IFile> files)
+        private static (Tobj Tobj, DdsFile Dds) OpenTextureFiles(IFile tobjFile, string tobjPath, 
+            Dictionary<string, IFile> files)
         {
             Tobj tobj;
             try
@@ -366,7 +367,7 @@ namespace TruckLib.HashFs
                 strings.Add(utf8Bytes);
             }
 
-            // Write string counts and lengths
+            // Write string count and lengths
             w.Write((uint)strings.Count);
             foreach (var str in strings)
             {
