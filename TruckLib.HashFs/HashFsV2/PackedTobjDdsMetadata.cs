@@ -154,6 +154,7 @@ namespace TruckLib.HashFs.HashFsV2
             return tobjMeta;
         }
 
+        /// <inheritdoc/>
         public void Deserialize(BinaryReader r, uint? version = null)
         {
             TextureWidth = r.ReadUInt16() + 1u;
@@ -162,6 +163,7 @@ namespace TruckLib.HashFs.HashFsV2
             SampleFlags = new FlagField(r.ReadUInt32());
         }
 
+        /// <inheritdoc/>
         public void Serialize(BinaryWriter w)
         {
             w.Write((ushort)(TextureWidth - 1));
