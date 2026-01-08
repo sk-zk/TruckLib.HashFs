@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text;
 
 [assembly: InternalsVisibleTo("TruckLib.HashFs.Tests")]
 namespace TruckLib.HashFs.Dds
@@ -36,11 +37,11 @@ namespace TruckLib.HashFs.Dds
             return Load(File.OpenRead(path));
         }
 
-        public static DdsFile Load(Stream stream)
+        public static DdsFile Load(Stream stream, bool keepOpen = false)
         {
             var dds = new DdsFile();
 
-            using var r = new BinaryReader(stream);
+            using var r = new BinaryReader(stream, Encoding.UTF8, keepOpen);
             dds.Deserialize(r);
 
             return dds;

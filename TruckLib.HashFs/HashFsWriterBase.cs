@@ -71,6 +71,8 @@ namespace TruckLib.HashFs
         /// </summary>
         /// <param name="stream">The stream containing the file.</param>
         /// <param name="archivePath">The path this file will have in the archive.</param>
+        /// <param name="keepOpen">Whether the stream should be left open
+        /// after <see cref="Save(Stream)">Write</see> has been called.</param>
         public void Add(Stream stream, string archivePath, bool keepOpen = false)
         {
             var fileEntry = Add<StreamFile>(archivePath);

@@ -69,5 +69,33 @@ namespace TruckLib.HashFs.Tests
             using var ms = new MemoryStream();
             Assert.Throws<ArgumentException>(() => writer.Add(ms, "/"));
         }
+
+        [Fact]
+        public void KeepOpenTrueRespected()
+        {
+            var writer = new HashFsV1Writer();
+
+            var fs = File.OpenRead(@"Data/SampleMod/manifest.sii");
+            writer.Add(fs, "/manifest.sii", true);
+
+            using var ms = new MemoryStream();
+            writer.Save(ms);
+
+            Assert.True(fs.CanRead);
+        }
+
+        [Fact]
+        public void KeepOpenFalseRespected()
+        {
+            var writer = new HashFsV1Writer();
+
+            var fs = File.OpenRead(@"Data/SampleMod/manifest.sii");
+            writer.Add(fs, "/manifest.sii", false);
+
+            using var ms = new MemoryStream();
+            writer.Save(ms);
+
+            Assert.False(fs.CanRead);
+        }
     }
 }

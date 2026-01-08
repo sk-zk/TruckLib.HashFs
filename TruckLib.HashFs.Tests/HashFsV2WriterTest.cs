@@ -162,5 +162,45 @@ namespace TruckLib.HashFs.Tests
             writer.Add([1, 2, 3, 4], acceptable); // should not throw
             Assert.Throws<ArgumentException>(() => writer.Add([1,2,3,4], tooLong));
         }
+
+        [Fact]
+        public void KeepOpenTrueRespected()
+        {
+            var writer = new HashFsV2Writer();
+
+            var plainFs = File.OpenRead(@"Data/SampleMod/manifest.sii");
+            writer.Add(plainFs, "/manifest.sii", true);
+            var ddsFs = File.OpenRead(@"Data/SampleMod/model/simple_cube/cubetx.dds");
+            writer.Add(ddsFs, "/model/simple_cube/cubetx.dds", true);
+            var tobjFs = File.OpenRead(@"Data/SampleMod/model/simple_cube/cubetx.tobj");
+            writer.Add(tobjFs, "/model/simple_cube/cubetx.tobj", true);
+
+            using var ms = new MemoryStream();
+            writer.Save(ms);
+
+            Assert.True(plainFs.CanRead);
+            Assert.True(ddsFs.CanRead);
+            Assert.True(tobjFs.CanRead);
+        }
+
+        [Fact]
+        public void KeepOpenFalseRespected()
+        {
+            var writer = new HashFsV2Writer();
+
+            var plainFs = File.OpenRead(@"Data/SampleMod/manifest.sii");
+            writer.Add(plainFs, "/manifest.sii", false);
+            var ddsFs = File.OpenRead(@"Data/SampleMod/model/simple_cube/cubetx.dds");
+            writer.Add(ddsFs, "/model/simple_cube/cubetx.dds", false);
+            var tobjFs = File.OpenRead(@"Data/SampleMod/model/simple_cube/cubetx.tobj");
+            writer.Add(tobjFs, "/model/simple_cube/cubetx.tobj", false);
+
+            using var ms = new MemoryStream();
+            writer.Save(ms);
+
+            Assert.False(plainFs.CanRead);
+            Assert.False(ddsFs.CanRead);
+            Assert.False(tobjFs.CanRead);
+        }
     }
 }

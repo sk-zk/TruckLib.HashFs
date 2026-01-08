@@ -170,8 +170,9 @@ namespace TruckLib.HashFs
             Tobj tobj;
             try
             {
-                using var fileStream = tobjFile.Open();
-                tobj = Tobj.Load(fileStream);
+                var keepOpen = tobjFile is StreamFile sf && sf.KeepOpen;
+                var fileStream = tobjFile.Open();
+                tobj = Tobj.Load(fileStream, keepOpen);
             }
             catch (UnsupportedVersionException uvex)
             {
@@ -193,7 +194,8 @@ namespace TruckLib.HashFs
             DdsFile dds;
             try
             {
-                dds = DdsFile.Load(ddsEntry.Open());
+                var keepOpen = ddsEntry is StreamFile sf && sf.KeepOpen;
+                dds = DdsFile.Load(ddsEntry.Open(), keepOpen);
             }
             catch (InvalidDataException)
             {
@@ -223,7 +225,10 @@ namespace TruckLib.HashFs
             var uncompressedSize = (uint)fileStream.Length;
             var compressedSize = (uint)(endPos - startPos);
 
-            fileStream.Dispose();
+            if (file is not StreamFile sf || !sf.KeepOpen)
+            {
+                fileStream.Dispose();
+            }
 
             // Write the metadata table entry
             var metaOffset = metaWriter.BaseStream.Position;

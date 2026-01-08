@@ -131,7 +131,7 @@ namespace TruckLib.HashFs
 
             var crc = ComputeChecksums ? ComputeChecksum(fileStream) : 0u;
 
-            if (!(file is StreamFile sf && !sf.KeepOpen))
+            if (file is not StreamFile sf || !sf.KeepOpen)
             {
                 fileStream.Dispose();
             }
