@@ -58,6 +58,14 @@ namespace TruckLib.HashFs.Tests
         }
 
         [Fact]
+        public void GetFilesThrowsIfNoSuchDirectory()
+        {
+            var loader = new AssetLoader([archiveA, archiveB]);
+
+            Assert.Throws<DirectoryNotFoundException>(() => loader.GetFiles("/nope"));
+        }
+
+        [Fact]
         public void Open()
         {
             var loader = new AssetLoader([archiveA, archiveB]);

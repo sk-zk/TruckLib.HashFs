@@ -68,9 +68,9 @@ namespace TruckLib.HashFs
         }
 
         /// <summary>
-        /// Iterates the wrapped file systems in the given order to find a directory with
+        /// Iterates the wrapped file systems in the given order to find directories with
         /// the specified path and returns the names of files (including their paths) in 
-        /// the first directory found.
+        /// the directories found.
         /// </summary>
         /// <param name="path">The absolute path to the directory to search.</param>
         /// <returns>An array of the full names (including paths) for the files in the
@@ -79,12 +79,23 @@ namespace TruckLib.HashFs
         /// contain this directory.</exception>
         public IList<string> GetFiles(string path)
         {
+            HashSet<string> files = null;
+            var anyExists = false;
+
             foreach (var fs in fileSystems)
             {
                 if (fs.DirectoryExists(path))
-                    return fs.GetFiles(path);
+                {
+                    anyExists = true;
+                    files ??= [];
+                    files.UnionWith(fs.GetFiles(path));
+                }
             }
-            throw new DirectoryNotFoundException();
+
+            if (anyExists)
+                return files.ToList();
+            else
+                throw new DirectoryNotFoundException();
         }
 
         /// <inheritdoc/>
