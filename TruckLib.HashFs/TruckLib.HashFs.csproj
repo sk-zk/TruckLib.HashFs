@@ -20,12 +20,12 @@
 
 	<ItemGroup>
 	  <PackageReference Include="GisDeflate" Version="1.0.2" />
-	  <PackageReference Include="System.IO.Hashing" Version="10.0.1" />
+	  <PackageReference Include="System.IO.Hashing" Version="10.0.2" />
 	  <PackageReference Include="TruckLib.Models" Version="0.4.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.102" PrivateAssets="All" />
 	</ItemGroup>
 
 	<ItemGroup>
