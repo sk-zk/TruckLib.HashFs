@@ -111,5 +111,12 @@ namespace TruckLib.HashFs
         /// <param name="entry">The entry.</param>
         /// <returns>The entry type.</returns>
         EntryType TryGetEntry(string path, out IEntry entry);
+
+        /// <summary>
+        /// Hashes a file path. 
+        /// </summary>
+        /// <param name="path">The path.</param>
+        /// <returns>The hash of the path.</returns>
+        ulong HashPath(string path);
     }
 }

@@ -277,5 +277,11 @@ namespace TruckLib.HashFs
             }
             return path[0..path.LastIndexOf(Separator)];
         }
+
+        /// <inheritdoc/>
+        public ulong HashPath(string path)
+        {
+            return Util.HashPath(path, Salt);
+        }
     }
 }
