@@ -31,22 +31,31 @@ namespace TruckLib.HashFs
         /// <inheritdoc/>
         public bool IsDirectory 
         {
-            get => Flags[0];
-            set => Flags[0] = value;
+            get => flags[0];
+            set => flags[0] = value;
         }
 
         /// <inheritdoc/>
         public bool IsCompressed
         {
-            get => Flags[1];
-            set => Flags[1] = value;
+            get => flags[1];
+            set => flags[1] = value;
         }
 
-        public bool Verify => Flags[2]; // TODO: What is this?
+        public bool Verify => flags[2]; // TODO: What is this?
 
-        public bool IsEncrypted => Flags[3];
+        public bool IsEncrypted => flags[3];
 
-        internal FlagField Flags;
+        private FlagField flags;
+
+        public FlagField Flags
+        {
+            get => flags;
+            internal set 
+            { 
+                flags = value; 
+            }
+        }
 
         public void Deserialize(BinaryReader r, uint? version = null)
         {
