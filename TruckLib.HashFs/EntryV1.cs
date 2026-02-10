@@ -15,7 +15,7 @@ namespace TruckLib.HashFs
         public ulong Hash { get; internal set; }
 
         /// <inheritdoc/>
-        public ulong Offset { get; internal set; }
+        public ulong Offset { get; set; }
 
         /// <summary>
         /// CRC32 checksum of the file.
