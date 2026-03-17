@@ -34,7 +34,7 @@ namespace TruckLib.HashFs
                     h1.Salt = r.ReadUInt16();
                     h1.HashMethod = new string(r.ReadChars(4));
                     h1.NumEntries = r.ReadUInt32();
-                    h1.StartOffset = r.ReadUInt32();
+                    h1.StartOffset = r.ReadUInt64();
                     return h1;
                 case 2:
                     var h2 = new HeaderV2();
@@ -57,7 +57,7 @@ namespace TruckLib.HashFs
 
     internal class HeaderV1 : Header
     {
-        public uint StartOffset { get; set; }
+        public ulong StartOffset { get; set; }
 
         public HeaderV1()
         {

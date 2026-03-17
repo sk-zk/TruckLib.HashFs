@@ -72,7 +72,7 @@ namespace TruckLib.HashFs
         {
             Reader.BaseStream.Position = forceEntryTableAtEnd 
                 ? Reader.BaseStream.Length - (Header.NumEntries * 32) 
-                : Header.StartOffset;
+                : (long)Header.StartOffset;
 
             for (int i = 0; i < Header.NumEntries; i++)
             {
