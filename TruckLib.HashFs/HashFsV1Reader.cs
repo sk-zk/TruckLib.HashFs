@@ -6,12 +6,12 @@ using System.Text;
 
 namespace TruckLib.HashFs
 {
-    internal class HashFsV1Reader : HashFsReaderBase
+    public class HashFsV1Reader : HashFsReaderBase
     {
         /// <summary>
         /// The header of the archive.
         /// </summary>
-        internal required HeaderV1 Header { get; init; }
+        public required HeaderV1 Header { get; init; }
 
         /// <inheritdoc/>
         public override ushort Version => 1;

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace TruckLib.HashFs.HashFsV2
 {
-    internal enum MetadataChunkType
+    public enum MetadataChunkType
     {
         /// <summary>
         /// Primary chunk type for a packed tobj/dds entry.

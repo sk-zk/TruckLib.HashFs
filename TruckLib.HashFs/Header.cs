@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 using TruckLib.HashFs.HashFsV2;
 
 namespace TruckLib.HashFs
 {
-    internal abstract class Header
+    public abstract class Header
     {
         public const uint Magic = 0x23534353; // "SCS#"
         public ushort Version { get; init; }
@@ -55,7 +54,7 @@ namespace TruckLib.HashFs
         }
     }
 
-    internal class HeaderV1 : Header
+    public class HeaderV1 : Header
     {
         public ulong StartOffset { get; set; }
 
@@ -75,7 +74,7 @@ namespace TruckLib.HashFs
         }
     }
 
-    internal class HeaderV2 : Header
+    public class HeaderV2 : Header
     {
         public uint EntryTableLength { get; set; }
         public uint NumMetadataEntries { get; set; }

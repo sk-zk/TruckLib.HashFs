@@ -6,7 +6,7 @@ using System.Text;
 namespace TruckLib.HashFs.HashFsV2
 {
     [StructLayout(LayoutKind.Explicit)]
-    internal struct EntryTableEntry
+    public struct EntryTableEntry
     {
         [FieldOffset(0)]
         public ulong Hash;

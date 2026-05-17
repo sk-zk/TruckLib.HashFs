@@ -10,7 +10,7 @@ using static TruckLib.HashFs.HashFsConsts;
 
 namespace TruckLib.HashFs
 {
-    internal abstract class HashFsReaderBase : IHashFsReader
+    public abstract class HashFsReaderBase : IHashFsReader
     {
         /// <inheritdoc/>
         public Dictionary<ulong, IEntry> Entries { get; } = [];
@@ -24,7 +24,7 @@ namespace TruckLib.HashFs
         /// <inheritdoc/>
         public BinaryReader BaseReader => Reader;
 
-        internal required BinaryReader Reader { get; init; }
+        public required BinaryReader Reader { get; init; }
 
         /// <inheritdoc/>
         char IFileSystem.DirectorySeparator => Separator;
@@ -159,6 +159,7 @@ namespace TruckLib.HashFs
         /// </summary>
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
             Reader.BaseStream.Dispose();
             Reader.Dispose();
         }

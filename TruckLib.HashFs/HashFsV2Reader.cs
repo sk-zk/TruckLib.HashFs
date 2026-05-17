@@ -13,12 +13,12 @@ using static TruckLib.HashFs.HashFsV2.Consts;
 
 namespace TruckLib.HashFs
 {
-    internal class HashFsV2Reader : HashFsReaderBase
+    public class HashFsV2Reader : HashFsReaderBase
     {
         /// <summary>
         /// The header of the archive.
         /// </summary>
-        internal required HeaderV2 Header { get; init; }
+        public required HeaderV2 Header { get; init; }
 
         public override ushort Version => 2;
 
@@ -29,6 +29,12 @@ namespace TruckLib.HashFs
         }
 
         public Platform Platform => Header.Platform;
+
+        /// <summary>
+        /// Items of the entry table which have been skipped because its primary chunk type is unknown
+        /// or not implemented.
+        /// </summary>
+        public Dictionary<EntryTableEntry, MetadataChunkType[]> UnimplementedEntries { get; } = [];
 
         /// <inheritdoc/>
         public override DirectoryListing GetDirectoryListing(
@@ -269,7 +275,7 @@ namespace TruckLib.HashFs
                 }
                 else
                 {
-                    throw new NotImplementedException($"Unhandled chunk type {chunkTypes[0]}");
+                    UnimplementedEntries.Add(entry, chunkTypes);
                 }
             }
         }
