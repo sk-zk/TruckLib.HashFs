@@ -6,7 +6,7 @@
 		<Nullable>disable</Nullable>
 		<RootNamespace>TruckLib.HashFs</RootNamespace>
 		<Authors>skzk</Authors>
-		<Version>0.2.6.0</Version>
+		<Version>0.2.7.0</Version>
 		<Title>TruckLib.HashFs</Title>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/sk-zk/TruckLib.HashFs</RepositoryUrl>
@@ -20,12 +20,12 @@
 
 	<ItemGroup>
 	  <PackageReference Include="GisDeflate" Version="1.0.2" />
-	  <PackageReference Include="System.IO.Hashing" Version="10.0.8" />
-	  <PackageReference Include="TruckLib.Models" Version="0.4.2" />
+	  <PackageReference Include="System.IO.Hashing" Version="10.0.13" />
+	  <PackageReference Include="TruckLib.Models" Version="0.4.3" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.300" PrivateAssets="All" />
+		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.402" PrivateAssets="All" />
 	</ItemGroup>
 
 	<ItemGroup>
