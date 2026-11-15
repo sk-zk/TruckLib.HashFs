@@ -60,7 +60,8 @@ namespace TruckLib.HashFs
         /// <inheritdoc/>
         public virtual byte[][] Extract(IEntry entry, string path)
         {
-            if (!Entries.ContainsValue(entry))
+            if (entry is null || !Entries.TryGetValue(entry.Hash, out var stored)
+                || !EqualityComparer<IEntry>.Default.Equals(stored, entry))
                 throw new FileNotFoundException();
 
             return [GetEntryContent(entry)];

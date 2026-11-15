@@ -72,7 +72,8 @@ namespace TruckLib.HashFs
         /// <inheritdoc/>
         public override byte[][] Extract(IEntry entry, string path)
         {
-            if (!Entries.ContainsValue(entry))
+            if (entry is null || !Entries.TryGetValue(entry.Hash, out var stored)
+                || !EqualityComparer<IEntry>.Default.Equals(stored, entry))
                 throw new FileNotFoundException();
 
             if (entry is EntryV2 v2 && v2.TobjMetadata != null)
