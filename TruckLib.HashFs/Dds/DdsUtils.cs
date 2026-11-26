@@ -175,7 +175,7 @@ namespace TruckLib.HashFs.Dds
             var packed = false;
             var planar = false;
             var bpe = 0;
-            switch(format)
+            switch (format)
             {
                 case DxgiFormat.BC1_TYPELESS:
                 case DxgiFormat.BC1_UNORM:
@@ -226,9 +226,13 @@ namespace TruckLib.HashFs.Dds
                     break;
 
                 case DxgiFormat.P010:
-                case  DxgiFormat.P016:
+                case DxgiFormat.P016:
                     planar = true;
                     bpe = 4;
+                    break;
+
+                default:
+                    bpe = 8;
                     break;
             }
 
@@ -280,7 +284,7 @@ namespace TruckLib.HashFs.Dds
 
         public static int BitsPerPixel(DxgiFormat format)
         {
-            switch(format)
+            switch (format)
             {
                 case DxgiFormat.R32G32B32A32_TYPELESS:
                 case DxgiFormat.R32G32B32A32_FLOAT:
@@ -420,7 +424,7 @@ namespace TruckLib.HashFs.Dds
                     return 8;
 
                 default:
-                    return 0;
+                    return 24;
             }
         }
     }
